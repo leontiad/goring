@@ -183,32 +183,44 @@ async fn score_user(
     println!("Successfully fetched user data");
 
     // Fetch repositories
-    let repos_url = format!("https://api.github.com/users/{}/repos?per_page=100", payload.username);
-    println!("Fetching repositories from: {}", repos_url);
-    
-    let repos_response = state.client
-        .get(&repos_url)
-        .send()
-        .await
-        .map_err(|e| {
-            println!("Error fetching repositories: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(GitHubError { message: format!("Failed to fetch repositories: {}", e) })
-            )
-        })?;
+    let mut all_repos = Vec::new();
+    let mut page = 1;
+    loop {
+        let repos_url = format!("https://api.github.com/users/{}/repos?per_page=100&page={}", payload.username, page);
+        println!("Fetching repositories from: {}", repos_url);
+        
+        let repos_response = state.client
+            .get(&repos_url)
+            .send()
+            .await
+            .map_err(|e| {
+                println!("Error fetching repositories: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(GitHubError { message: format!("Failed to fetch repositories: {}", e) })
+                )
+            })?;
 
-    println!("Repos response status: {}", repos_response.status());
+        println!("Repos response status: {}", repos_response.status());
 
-    let repos: Vec<Value> = handle_github_response(repos_response).await?;
-    println!("Successfully fetched {} repositories", repos.len());
+        let repos: Vec<Value> = handle_github_response(repos_response).await?;
+        println!("Successfully fetched {} repositories from page {}", repos.len(), page);
+        
+        if repos.is_empty() {
+            break;
+        }
+        
+        all_repos.extend(repos);
+        page += 1;
+    }
+    println!("Total repositories fetched: {}", all_repos.len());
 
     // Calculate repository statistics
-    let total_stars: usize = repos.iter()
+    let total_stars: usize = all_repos.iter()
         .map(|repo| repo["stargazers_count"].as_u64().unwrap_or(0) as usize)
         .sum();
     
-    let total_forks: usize = repos.iter()
+    let total_forks: usize = all_repos.iter()
         .map(|repo| repo["forks_count"].as_u64().unwrap_or(0) as usize)
         .sum();
 
@@ -248,7 +260,7 @@ async fn score_user(
 
     // Fetch pull requests for first 10 repos
     let mut pulls = Vec::new();
-    for repo in repos.iter().take(10) {
+    for repo in all_repos.iter().take(10) {
         if let Some(full_name) = repo["full_name"].as_str() {
             let pr_url = format!(
                 "https://api.github.com/repos/{}/pulls?state=all&creator={}",
@@ -273,7 +285,7 @@ async fn score_user(
 
     // Calculate language distribution
     let mut languages = HashMap::new();
-    for repo in &repos {
+    for repo in &all_repos {
         if let Some(lang) = repo["language"].as_str() {
             *languages.entry(lang.to_string()).or_insert(0.0) += 1.0;
         }
@@ -290,7 +302,7 @@ async fn score_user(
     // Convert the GitHub API responses to our internal types
     let user = GitHubUser {
         login: payload.username.clone(),
-        repositories: repos.clone().into_iter()
+        repositories: all_repos.clone().into_iter()
             .filter_map(|r| serde_json::from_value(r).ok())
             .collect(),
         events: events.clone().into_iter()
@@ -344,7 +356,7 @@ async fn score_user(
         score,
         rating: rating.to_string(),
         stats: UserStats {
-            total_repositories: repos.len(),
+            total_repositories: all_repos.len(),
             total_stars,
             total_forks,
             total_contributions: events.len(),
