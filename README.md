@@ -1,6 +1,6 @@
 # GitHub Score
 
-A modern web application for analyzing and comparing GitHub developer profiles. Built with SvelteKit and TypeScript.
+A modern web application for analyzing and comparing GitHub developer profiles. Built with SvelteKit and Rust.
 
 ## Features
 
@@ -15,7 +15,7 @@ A modern web application for analyzing and comparing GitHub developer profiles. 
 - SvelteKit
 - TypeScript
 - CSS with modern features (Grid, Flexbox, CSS Variables)
-- Local Storage for caching
+- Rust backend
 
 ## Getting Started
 

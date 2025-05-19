@@ -33,3 +33,7 @@ dist-ssr
 /build
 /.svelte-kit
 /package 
+
+/target
+/data
+/api/venv
