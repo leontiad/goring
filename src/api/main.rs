@@ -8,17 +8,20 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tower_http::cors::{CorsLayer, Any};
-use scoring::github_score::{GitHubScorer, GitHubUser, DetailedScores};
+use github_score_api::scoring::{GitHubScorer, GitHubUser, DetailedScores};
 use reqwest;
 use serde_json::Value;
 use tokio::net::TcpListener;
 use std::collections::HashMap;
 use std::env;
+use github_score_api::db::{Database, models::{CachedUser, CachedScore}};
+use chrono::Utc;
 
 #[derive(Clone)]
 struct AppState {
     scorer: Arc<GitHubScorer>,
     client: Arc<reqwest::Client>,
+    db: Arc<Database>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,7 +29,7 @@ struct ScoreRequest {
     username: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ScoreResponse {
     score: DetailedScores,
     rating: String,
@@ -35,7 +38,7 @@ struct ScoreResponse {
     languages: LanguageDistribution,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct UserStats {
     total_repositories: usize,
     total_stars: usize,
@@ -43,7 +46,7 @@ struct UserStats {
     total_contributions: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ActivityData {
     commits_last_month: usize,
     pull_requests_last_month: usize,
@@ -51,7 +54,7 @@ struct ActivityData {
     activity_trend: Vec<ActivityPoint>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct ActivityPoint {
     date: String,
     commits: usize,
@@ -59,7 +62,7 @@ struct ActivityPoint {
     issues: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct LanguageDistribution {
     languages: HashMap<String, f64>,
 }
@@ -72,6 +75,7 @@ struct GitHubError {
 #[derive(Debug, Deserialize)]
 struct GitHubRateLimitError {
     message: String,
+    #[allow(dead_code)]
     documentation_url: Option<String>,
 }
 
@@ -112,6 +116,9 @@ async fn handle_github_response<T: for<'de> serde::Deserialize<'de>>(
 
 #[tokio::main]
 async fn main() {
+    // Initialize database
+    let db = Database::new().await.expect("Failed to initialize database");
+    
     // Get GitHub token from environment variable
     let github_token = env::var("GITHUB_TOKEN").unwrap_or_else(|_| {
         println!("Warning: GITHUB_TOKEN not set. Using unauthenticated requests (rate limited).");
@@ -137,6 +144,7 @@ async fn main() {
             .default_headers(headers)
             .build()
             .unwrap()),
+        db: Arc::new(db),
     };
 
     let cors = CorsLayer::new()
@@ -161,59 +169,187 @@ async fn score_user(
 ) -> Result<Json<ScoreResponse>, (StatusCode, Json<GitHubError>)> {
     println!("Received request for username: {}", payload.username);
 
-    // Fetch user data from GitHub
-    let user_url = format!("https://api.github.com/users/{}", payload.username);
-    println!("Fetching user data from: {}", user_url);
-    
-    let user_response = state.client
-        .get(&user_url)
-        .send()
-        .await
-        .map_err(|e| {
-            println!("Error fetching user data: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(GitHubError { message: format!("Failed to fetch user data: {}", e) })
-            )
-        })?;
-
-    println!("User response status: {}", user_response.status());
-
-    let user_data: Value = handle_github_response(user_response).await?;
-    println!("Successfully fetched user data");
-
-    // Fetch repositories
-    let mut all_repos = Vec::new();
-    let mut page = 1;
-    loop {
-        let repos_url = format!("https://api.github.com/users/{}/repos?per_page=100&page={}", payload.username, page);
-        println!("Fetching repositories from: {}", repos_url);
-        
-        let repos_response = state.client
-            .get(&repos_url)
-            .send()
-            .await
-            .map_err(|e| {
-                println!("Error fetching repositories: {}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(GitHubError { message: format!("Failed to fetch repositories: {}", e) })
-                )
-            })?;
-
-        println!("Repos response status: {}", repos_response.status());
-
-        let repos: Vec<Value> = handle_github_response(repos_response).await?;
-        println!("Successfully fetched {} repositories from page {}", repos.len(), page);
-        
-        if repos.is_empty() {
-            break;
+    // Check cache first
+    match state.db.get_cached_score(&payload.username).await {
+        Ok(Some(cached_score)) => {
+            println!("Found cached score for user: {} (last updated: {})", 
+                payload.username, 
+                cached_score.last_updated
+            );
+            return Ok(Json(ScoreResponse {
+                score: serde_json::from_value(cached_score.score)
+                    .map_err(|e| (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(GitHubError { message: format!("Failed to parse cached score: {}", e) })
+                    ))?,
+                rating: cached_score.rating,
+                stats: serde_json::from_value(cached_score.stats)
+                    .map_err(|e| (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(GitHubError { message: format!("Failed to parse cached stats: {}", e) })
+                    ))?,
+                activity: serde_json::from_value(cached_score.activity)
+                    .map_err(|e| (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(GitHubError { message: format!("Failed to parse cached activity: {}", e) })
+                    ))?,
+                languages: serde_json::from_value(cached_score.languages)
+                    .map_err(|e| (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(GitHubError { message: format!("Failed to parse cached languages: {}", e) })
+                    ))?,
+            }));
         }
-        
-        all_repos.extend(repos);
-        page += 1;
+        Ok(None) => {
+            println!("No cached score found for user: {}", payload.username);
+        }
+        Err(e) => {
+            println!("Error checking cache for user {}: {}", payload.username, e);
+        }
     }
-    println!("Total repositories fetched: {}", all_repos.len());
+
+    // Check if we have cached user data
+    let (_user_data, all_repos, events, pulls) = match state.db.get_cached_user(&payload.username).await {
+        Ok(Some(cached_user)) => {
+            println!("Found cached user data for: {} (last updated: {})", 
+                payload.username, 
+                cached_user.last_updated
+            );
+            (
+                cached_user.user_data,
+                cached_user.repositories,
+                cached_user.events,
+                cached_user.pull_requests,
+            )
+        }
+        Ok(None) => {
+            println!("No cached user data found for: {}", payload.username);
+            // Fetch fresh data from GitHub
+            let user_url = format!("https://api.github.com/users/{}", payload.username);
+            println!("Fetching user data from: {}", user_url);
+            
+            let user_response = state.client
+                .get(&user_url)
+                .send()
+                .await
+                .map_err(|e| {
+                    println!("Error fetching user data: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(GitHubError { message: format!("Failed to fetch user data: {}", e) })
+                    )
+                })?;
+
+            println!("User response status: {}", user_response.status());
+
+            let user_data: Value = handle_github_response(user_response).await?;
+            println!("Successfully fetched user data");
+
+            // Fetch repositories with pagination
+            let mut all_repos = Vec::new();
+            let mut page = 1;
+            loop {
+                let repos_url = format!("https://api.github.com/users/{}/repos?per_page=100&page={}", payload.username, page);
+                println!("Fetching repositories from: {}", repos_url);
+                
+                let repos_response = state.client
+                    .get(&repos_url)
+                    .send()
+                    .await
+                    .map_err(|e| {
+                        println!("Error fetching repositories: {}", e);
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(GitHubError { message: format!("Failed to fetch repositories: {}", e) })
+                        )
+                    })?;
+
+                println!("Repos response status: {}", repos_response.status());
+
+                let repos: Vec<Value> = handle_github_response(repos_response).await?;
+                println!("Successfully fetched {} repositories from page {}", repos.len(), page);
+                
+                if repos.is_empty() {
+                    break;
+                }
+                
+                all_repos.extend(repos);
+                page += 1;
+            }
+            println!("Total repositories fetched: {}", all_repos.len());
+
+            // Fetch events
+            let events_url = format!("https://api.github.com/users/{}/events?per_page=100", payload.username);
+            println!("Fetching events from: {}", events_url);
+            
+            let events_response = state.client
+                .get(&events_url)
+                .send()
+                .await
+                .map_err(|e| {
+                    println!("Error fetching events: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(GitHubError { message: format!("Failed to fetch events: {}", e) })
+                    )
+                })?;
+
+            println!("Events response status: {}", events_response.status());
+
+            let events: Vec<Value> = handle_github_response(events_response).await?;
+            println!("Successfully fetched {} events", events.len());
+
+            // Fetch pull requests for first 10 repos
+            let mut pulls = Vec::new();
+            for repo in all_repos.iter().take(10) {
+                if let Some(full_name) = repo["full_name"].as_str() {
+                    let pr_url = format!(
+                        "https://api.github.com/repos/{}/pulls?state=all&creator={}",
+                        full_name, payload.username
+                    );
+                    println!("Fetching PRs from: {}", pr_url);
+                    
+                    if let Ok(pr_response) = state.client
+                        .get(&pr_url)
+                        .send()
+                        .await 
+                    {
+                        println!("PR response status: {}", pr_response.status());
+                        if let Ok(prs_json) = handle_github_response::<Vec<Value>>(pr_response).await {
+                            let pr_count = prs_json.len();
+                            pulls.extend(prs_json);
+                            println!("Successfully fetched {} PRs from {}", pr_count, full_name);
+                        }
+                    }
+                }
+            }
+
+            // Cache the user data
+            let cached_user = CachedUser {
+                username: payload.username.clone(),
+                user_data: user_data.clone(),
+                repositories: all_repos.clone(),
+                events: events.clone(),
+                pull_requests: pulls.clone(),
+                last_updated: Utc::now(),
+            };
+            
+            if let Err(e) = state.db.cache_user(&cached_user).await {
+                println!("Failed to cache user data: {}", e);
+            } else {
+                println!("Successfully cached user data for: {}", payload.username);
+            }
+
+            (user_data, all_repos, events, pulls)
+        }
+        Err(e) => {
+            println!("Error checking user cache: {}", e);
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(GitHubError { message: format!("Database error: {}", e) })
+            ));
+        }
+    };
 
     // Calculate repository statistics
     let total_stars: usize = all_repos.iter()
@@ -223,27 +359,6 @@ async fn score_user(
     let total_forks: usize = all_repos.iter()
         .map(|repo| repo["forks_count"].as_u64().unwrap_or(0) as usize)
         .sum();
-
-    // Fetch events
-    let events_url = format!("https://api.github.com/users/{}/events?per_page=100", payload.username);
-    println!("Fetching events from: {}", events_url);
-    
-    let events_response = state.client
-        .get(&events_url)
-        .send()
-        .await
-        .map_err(|e| {
-            println!("Error fetching events: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(GitHubError { message: format!("Failed to fetch events: {}", e) })
-            )
-        })?;
-
-    println!("Events response status: {}", events_response.status());
-
-    let events: Vec<Value> = handle_github_response(events_response).await?;
-    println!("Successfully fetched {} events", events.len());
 
     // Calculate activity statistics
     let commits_last_month = events.iter()
@@ -257,31 +372,6 @@ async fn score_user(
     let issues_last_month = events.iter()
         .filter(|e| e["type"] == "IssuesEvent")
         .count();
-
-    // Fetch pull requests for first 10 repos
-    let mut pulls = Vec::new();
-    for repo in all_repos.iter().take(10) {
-        if let Some(full_name) = repo["full_name"].as_str() {
-            let pr_url = format!(
-                "https://api.github.com/repos/{}/pulls?state=all&creator={}",
-                full_name, payload.username
-            );
-            println!("Fetching PRs from: {}", pr_url);
-            
-            if let Ok(pr_response) = state.client
-                .get(&pr_url)
-                .send()
-                .await 
-            {
-                println!("PR response status: {}", pr_response.status());
-                if let Ok(prs_json) = handle_github_response::<Vec<Value>>(pr_response).await {
-                    let pr_count = prs_json.len();
-                    pulls.extend(prs_json);
-                    println!("Successfully fetched {} PRs from {}", pr_count, full_name);
-                }
-            }
-        }
-    }
 
     // Calculate language distribution
     let mut languages = HashMap::new();
@@ -352,8 +442,8 @@ async fn score_user(
         });
     }
 
-    Ok(Json(ScoreResponse {
-        score,
+    let response = ScoreResponse {
+        score: score.clone(),
         rating: rating.to_string(),
         stats: UserStats {
             total_repositories: all_repos.len(),
@@ -370,5 +460,24 @@ async fn score_user(
         languages: LanguageDistribution {
             languages,
         },
-    }))
+    };
+
+    // Cache the score
+    let cached_score = CachedScore {
+        username: payload.username.clone(),
+        score: serde_json::to_value(&score).unwrap(),
+        rating: rating.to_string(),
+        stats: serde_json::to_value(&response.stats).unwrap(),
+        activity: serde_json::to_value(&response.activity).unwrap(),
+        languages: serde_json::to_value(&response.languages).unwrap(),
+        last_updated: Utc::now(),
+    };
+
+    if let Err(e) = state.db.cache_score(&cached_score).await {
+        println!("Failed to cache score: {}", e);
+    } else {
+        println!("Successfully cached score for: {}", payload.username);
+    }
+
+    Ok(Json(response))
 } 

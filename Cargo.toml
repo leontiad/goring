@@ -15,10 +15,11 @@ reqwest = { version = "0.11", features = ["json"] }
 tower = { version = "0.4", features = ["util"] }
 hyper = { version = "1.0", features = ["full"] }
 futures = "0.3"
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "chrono", "json"] }
 
 [lib]
-name = "scoring"
-path = "src/scoring/lib.rs"
+name = "github_score_api"
+path = "src/lib.rs"
 
 [[bin]]
 name = "github-score-api"

@@ -11,7 +11,7 @@ pub enum ScoringError {
     InvalidData(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitHubUser {
     pub login: String,
     pub repositories: Vec<Repository>,
@@ -19,7 +19,7 @@ pub struct GitHubUser {
     pub pull_requests: Vec<PullRequest>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Repository {
     pub name: String,
     pub full_name: String,
@@ -30,12 +30,12 @@ pub struct Repository {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
     pub login: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event {
     pub r#type: String,
     pub created_at: DateTime<Utc>,
@@ -43,22 +43,22 @@ pub struct Event {
     pub payload: Option<EventPayload>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Repo {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EventPayload {
     pub action: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PullRequest {
     pub merged_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScoreComponents {
     pub contribution_weight: f64,
     pub repo_significance: f64,
@@ -66,7 +66,7 @@ pub struct ScoreComponents {
     pub community_engagement: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DetailedScores {
     pub final_score: f64,
     pub component_scores: ScoreComponents,
