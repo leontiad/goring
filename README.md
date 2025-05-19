@@ -1,20 +1,83 @@
-# GitHub Score
+# GitHub Score API
 
-A modern web application for analyzing and comparing GitHub developer profiles. Built with SvelteKit and Rust.
+A comprehensive API for analyzing and scoring GitHub users based on their contributions, repository significance, and community engagement.
+
+## Project Structure
+
+```
+.
+├── src/
+│   ├── api/
+│   │   └── main.rs           # Main API server implementation
+│   ├── db/
+│   │   ├── models.rs         # Database models for caching
+│   │   ├── db.rs            # Database connection and operations
+│   │   └── mod.rs           # Database module exports
+│   ├── scoring/
+│   │   ├── github_score.rs   # GitHub scoring algorithm implementation
+│   │   └── mod.rs           # Scoring module exports
+│   └── lib.rs               # Library exports and shared types
+├── data/                    # SQLite database storage
+│   └── github_cache.db      # Cached GitHub data
+├── Cargo.toml              # Rust dependencies and project configuration
+└── README.md              # Project documentation
+```
 
 ## Features
 
-- Analyze individual GitHub profiles with detailed scoring
-- Compare multiple developers side by side
-- View trending developers based on different timeframes
-- Modern dark theme UI with smooth animations
-- Responsive design for all devices
+- Comprehensive GitHub user analysis
+- Caching system for improved performance
+- Rate limit handling
+- Detailed scoring breakdown
+- RESTful API endpoints
 
-## Tech Stack
+## API Endpoints
 
-- SvelteKit
-- TypeScript
-- Rust backend
+- `POST /api/score` - Calculate GitHub user score
+- `GET /api/health` - Health check endpoint
+
+## Database Schema
+
+### Cached Users Table
+- username (TEXT, PRIMARY KEY)
+- user_data (TEXT)
+- repositories (TEXT)
+- events (TEXT)
+- pull_requests (TEXT)
+- last_updated (TEXT)
+
+### Cached Scores Table
+- username (TEXT, PRIMARY KEY)
+- score (TEXT)
+- rating (TEXT)
+- stats (TEXT)
+- activity (TEXT)
+- languages (TEXT)
+- last_updated (TEXT)
+
+## Setup
+
+1. Clone the repository
+2. Set up your GitHub token:
+   ```bash
+   export GITHUB_TOKEN=your_token_here
+   ```
+3. Run the server:
+   ```bash
+   cargo run
+   ```
+
+## Dependencies
+
+- sqlx - SQL toolkit and ORM
+- reqwest - HTTP client
+- serde - Serialization/deserialization
+- tokio - Async runtime
+- chrono - Date and time handling
+
+## Development
+
+The project uses SQLite for caching GitHub API responses. The database file is stored in the `data` directory and is automatically created when the server starts.
 
 ## Getting Started
 
@@ -43,17 +106,6 @@ npm run dev
 - `npm run preview` - Preview production build
 - `npm run check` - Run type checking
 
-## Project Structure
-
-```
-src/
-├── lib/
-│   ├── components/     # Reusable components
-│   └── types.ts        # TypeScript type definitions
-├── routes/            # Page components
-├── app.css           # Global styles
-└── app.html          # HTML template
-```
 ## Backend Server
 
 ```
