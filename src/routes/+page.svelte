@@ -12,30 +12,72 @@
   let error: string | null = null;
   let score: GitHubScore | null = null;
   let comparisonScores: GitHubScore[] = [];
+  let rating: string | null = null;
+  let componentScores: any = null;
+  let detailedComponents: any = null;
+  
+  interface GitHubRepo {
+    name: string;
+    full_name: string;
+    stargazers_count: number;
+    forks_count: number;
+    updated_at: string;
+    owner: { login: string };
+    description: string | null;
+  }
+
+  interface GitHubEvent {
+    type: string;
+    created_at: string;
+    repo: { name: string } | null;
+    payload: { action: string | null } | null;
+  }
+
+  interface GitHubPullRequest {
+    merged_at: string | null;
+  }
   
   async function searchUser() {
-    if (!username.trim()) {
-      error = 'Please enter a GitHub username';
-      return;
-    }
-
+    if (!username) return;
+    
     loading = true;
-    error = '';
-    score = null;
-
+    error = null;
+    
     try {
-      const res = await fetch(`http://0.0.0.0:8001/api/score/${username}`);
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.detail || 'Failed to fetch user data');
-      }
-      const data = await res.json();
-      score = data;
-    } catch (e) {
-      console.error('Error fetching user data:', e);
-      error = e instanceof Error ? e.message : 'Failed to fetch user data';
+        // Call our scoring API with just the username
+        const scoreResponse = await fetch('http://localhost:3001/api/score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+        });
+
+        if (!scoreResponse.ok) {
+            if (scoreResponse.status === 404) {
+                throw new Error('User not found');
+            }
+            throw new Error('Failed to calculate score');
+        }
+
+        const scoreData = await scoreResponse.json();
+        
+        // Update the UI with the score data
+        score = {
+            username: username,
+            rating: scoreData.rating,
+            final_score: scoreData.score.final_score * 100,
+            contribution_score: scoreData.score.component_scores.contribution_weight * 100,
+            repository_significance: scoreData.score.component_scores.repo_significance * 100,
+            code_quality: scoreData.score.component_scores.code_quality * 100,
+            community_engagement: scoreData.score.component_scores.community_engagement * 100
+        };
+        
+    } catch (e: unknown) {
+        error = e instanceof Error ? e.message : 'An unknown error occurred';
+        score = null;
     } finally {
-      loading = false;
+        loading = false;
     }
   }
   
@@ -94,8 +136,8 @@
     {#if score}
       <section class="score-section">
         <div class="score-header">
-          <h2>{score.username}</h2>
-          <div class="rating">{score.rating}</div>
+          <h2>{username}</h2>
+          <div class="rating">{rating}</div>
         </div>
         <div class="final-score">
           <div class="score-label">Final Score</div>

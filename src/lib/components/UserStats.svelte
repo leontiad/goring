@@ -4,42 +4,49 @@
 
   export let score: GitHubScore;
 
-  let chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Commits',
-        data: [65, 59, 80, 81, 56, 55],
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        borderColor: 'rgb(59, 130, 246)',
-        borderWidth: 1
-      },
-      {
-        label: 'Issues',
-        data: [28, 48, 40, 19, 86, 27],
-        backgroundColor: 'rgba(16, 185, 129, 0.5)',
-        borderColor: 'rgb(16, 185, 129)',
-        borderWidth: 1
-      },
-      {
-        label: 'Pull Requests',
-        data: [45, 25, 16, 36, 67, 18],
-        backgroundColor: 'rgba(245, 158, 11, 0.5)',
-        borderColor: 'rgb(245, 158, 11)',
-        borderWidth: 1
-      }
-    ]
+  interface Language {
+    name: string;
+    percentage: number;
+  }
+
+  let stats = {
+    total_repositories: 0,
+    total_stars: 0,
+    total_forks: 0,
+    total_contributions: 0
   };
 
-  let languages = [
-    { name: 'JavaScript', percentage: 45 },
-    { name: 'Python', percentage: 30 },
-    { name: 'TypeScript', percentage: 15 },
-    { name: 'Go', percentage: 10 }
-  ];
+  let activity = {
+    commits_last_month: 0,
+    pull_requests_last_month: 0,
+    issues_last_month: 0,
+    activity_trend: []
+  };
 
-  onMount(() => {
-    // Initialize charts when charting library is integrated
+  let languages: Language[] = [];
+
+  onMount(async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/score`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: score.username })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        stats = data.stats;
+        activity = data.activity;
+        languages = Object.entries(data.languages.languages).map(([name, percentage]) => ({
+          name,
+          percentage: percentage as number
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch user stats:', error);
+    }
   });
 </script>
 
@@ -47,23 +54,19 @@
   <div class="stats-grid">
     <div class="stat-card">
       <h3>Total Repositories</h3>
-      <div class="stat-value">42</div>
-      <div class="stat-trend positive">+12% from last month</div>
+      <div class="stat-value">{stats.total_repositories}</div>
     </div>
     <div class="stat-card">
       <h3>Total Stars</h3>
-      <div class="stat-value">1.2k</div>
-      <div class="stat-trend positive">+8% from last month</div>
+      <div class="stat-value">{stats.total_stars}</div>
     </div>
     <div class="stat-card">
       <h3>Total Forks</h3>
-      <div class="stat-value">856</div>
-      <div class="stat-trend positive">+15% from last month</div>
+      <div class="stat-value">{stats.total_forks}</div>
     </div>
     <div class="stat-card">
       <h3>Total Contributions</h3>
-      <div class="stat-value">2.4k</div>
-      <div class="stat-trend positive">+20% from last month</div>
+      <div class="stat-value">{stats.total_contributions}</div>
     </div>
   </div>
 
@@ -75,7 +78,7 @@
           <div class="language">
             <div class="language-info">
               <span class="language-name">{language.name}</span>
-              <span class="language-percentage">{language.percentage}%</span>
+              <span class="language-percentage">{language.percentage.toFixed(1)}%</span>
             </div>
             <div class="progress-bar">
               <div class="progress" style="width: {language.percentage}%"></div>
@@ -87,21 +90,18 @@
 
     <div class="chart-card">
       <h3>Activity Overview</h3>
-      <div class="chart-container">
-        <!-- Chart will be rendered here -->
-      </div>
-      <div class="chart-legend">
-        <div class="legend-item">
-          <div class="legend-color" style="background: rgb(59, 130, 246)"></div>
-          <span>Commits</span>
+      <div class="activity-stats">
+        <div class="activity-stat">
+          <span class="stat-label">Commits (Last Month)</span>
+          <span class="stat-value">{activity.commits_last_month}</span>
         </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: rgb(16, 185, 129)"></div>
-          <span>Issues</span>
+        <div class="activity-stat">
+          <span class="stat-label">Pull Requests (Last Month)</span>
+          <span class="stat-value">{activity.pull_requests_last_month}</span>
         </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: rgb(245, 158, 11)"></div>
-          <span>Pull Requests</span>
+        <div class="activity-stat">
+          <span class="stat-label">Issues (Last Month)</span>
+          <span class="stat-value">{activity.issues_last_month}</span>
         </div>
       </div>
     </div>
@@ -257,5 +257,33 @@
   .legend-item span {
     color: var(--text-secondary);
     font-size: 0.875rem;
+  }
+
+  .activity-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .activity-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .activity-stat:last-child {
+    border-bottom: none;
+  }
+
+  .stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .stat-value {
+    font-weight: 600;
+    color: var(--text);
   }
 </style> 
