@@ -4,7 +4,6 @@ use crate::db::models::{CachedUser, CachedScore};
 use std::path::Path;
 use std::fs;
 use std::env;
-use std::io::Error as IoError;
 
 pub struct Database {
     pool: SqlitePool,

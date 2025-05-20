@@ -3,7 +3,7 @@ use axum::{
     Router,
     Json,
     extract::State,
-    http::{StatusCode, HeaderValue, Method},
+    http::{StatusCode, HeaderValue, Method, HeaderName},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -11,7 +11,6 @@ use tower_http::cors::CorsLayer;
 use github_score_api::scoring::{GitHubScorer, GitHubUser, DetailedScores};
 use reqwest;
 use serde_json::Value;
-use tokio::net::TcpListener;
 use std::collections::HashMap;
 use std::env;
 use github_score_api::db::{Database, models::{CachedUser, CachedScore}};
@@ -120,12 +119,25 @@ async fn main() {
     // Initialize logging
     env_logger::init();
     
-    // Get environment variables
-    let frontend_url = env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:5173".to_string());
-    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
+    // Get environment variables with better defaults and error handling
+    let frontend_url = env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| {
+            println!("FRONTEND_URL not set, defaulting to http://localhost:5175");
+            "http://localhost:5175".to_string()
+        });
+    
+    let port = env::var("PORT")
+        .unwrap_or_else(|_| {
+            println!("PORT not set, defaulting to 3001");
+            "3001".to_string()
+        });
+    
+    println!("Starting server with configuration:");
+    println!("Frontend URL: {}", frontend_url);
+    println!("Port: {}", port);
     
     // Initialize database
-    let db = Database::new().await.expect("Failed to initialize database");
+    let db = Arc::new(Database::new().await.expect("Failed to initialize database"));
     
     // Initialize GitHub scorer
     let scorer = Arc::new(GitHubScorer::new());
@@ -145,7 +157,7 @@ async fn main() {
         .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST])
         .allow_headers(tower_http::cors::Any)
-        .allow_credentials(true);
+        .allow_credentials(false);
     
     // Build router
     let app = Router::new()
@@ -158,10 +170,8 @@ async fn main() {
     let addr = format!("0.0.0.0:{}", port);
     println!("Server running on http://{}", addr);
     
-    axum::Server::bind(&addr.parse().unwrap())
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn score_user(
