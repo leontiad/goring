@@ -5,6 +5,7 @@
   import ComparisonView from '$lib/components/ComparisonView.svelte';
   import Layout from '$lib/components/Layout.svelte';
   import UserStats from '$lib/components/UserStats.svelte';
+  import { endpoints } from '$lib/config';
   
   let username = '';
   let usernames = '';
@@ -45,7 +46,7 @@
     
     try {
         // Call our scoring API with just the username
-        const scoreResponse = await fetch('http://localhost:3001/api/score', {
+        const scoreResponse = await fetch(endpoints.score, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -92,7 +93,7 @@
       const usernamesList = usernames.split(',').map(u => u.trim()).filter(Boolean);
       const scores = await Promise.all(
         usernamesList.map(async (username) => {
-          const response = await fetch(`/api/score/${username}`);
+          const response = await fetch(`${endpoints.score}/${username}`);
           if (!response.ok) {
             throw new Error(`Failed to fetch score for ${username}`);
           }
