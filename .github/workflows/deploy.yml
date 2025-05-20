@@ -67,9 +67,9 @@ jobs:
         production-branch: main
         github-token: ${{ secrets.GITHUB_TOKEN }}
         deploy-message: "Deploy from GitHub Actions"
-        enable-pull-request-comment: true
-        enable-commit-comment: true
-        overwrites-pull-request-comment: true
+        enable-pull-request-comment: false
+        enable-commit-comment: false
+        overwrites-pull-request-comment: false
       env:
         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -78,3 +78,19 @@ jobs:
 #      run: cargo shuttle deploy --allow-dirty
 #      env:
 #        SHUTTLE_TOKEN: ${{ secrets.SHUTTLE_TOKEN }}
+
+    - name: Create PR Comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const deployUrl = process.env.NETLIFY_DEPLOY_URL || 'https://682c99c8944158aeb0143e6a--statuesque-biscuit-e22447.netlify.app';
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 Preview deployed to: ${deployUrl}`
+          });
+      env:
+        NETLIFY_DEPLOY_URL: ${{ steps.deploy.outputs.netlify_url }}
