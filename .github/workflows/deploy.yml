@@ -25,19 +25,37 @@ jobs:
         override: true
         
     - name: Install frontend dependencies
-      run: npm ci
-      
-    - name: Build frontend
-      run: npm run build
-      
-    - name: Debug - List directory contents
+      run: |
+        echo "Installing dependencies..."
+        npm ci
+        echo "Dependencies installed"
+        
+    - name: Debug - Pre-build directory
       run: |
         echo "Current directory:"
         pwd
-        echo "Directory contents:"
+        echo "Directory contents before build:"
         ls -la
-        echo "Dist directory contents:"
-        ls -la dist || echo "dist directory not found"
+        
+    - name: Build frontend
+      run: |
+        echo "Starting build..."
+        npm run build
+        echo "Build completed"
+        
+    - name: Debug - Post-build directory
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Directory contents after build:"
+        ls -la
+        echo "Checking for build directory:"
+        if [ -d "build" ]; then
+          echo "build directory exists"
+          ls -la build
+        else
+          echo "build directory not found"
+        fi
       
 #    - name: Install Shuttle CLI
 #      run: cargo install cargo-shuttle
@@ -45,7 +63,7 @@ jobs:
     - name: Deploy to Netlify
       uses: nwtgck/actions-netlify@v2
       with:
-        publish-dir: './dist'
+        publish-dir: 'build'
         production-branch: main
         github-token: ${{ secrets.GITHUB_TOKEN }}
         deploy-message: "Deploy from GitHub Actions"
