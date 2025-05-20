@@ -1,13 +1,13 @@
 use axum::{
-    routing::post,
+    routing::{post, get},
     Router,
     Json,
     extract::State,
-    http::StatusCode,
+    http::{StatusCode, HeaderValue, Method},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tower_http::cors::{CorsLayer, Any};
+use tower_http::cors::CorsLayer;
 use github_score_api::scoring::{GitHubScorer, GitHubUser, DetailedScores};
 use reqwest;
 use serde_json::Value;
@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::env;
 use github_score_api::db::{Database, models::{CachedUser, CachedScore}};
 use chrono::Utc;
+use env_logger;
 
 #[derive(Clone)]
 struct AppState {
@@ -116,55 +117,55 @@ async fn handle_github_response<T: for<'de> serde::Deserialize<'de>>(
 
 #[tokio::main]
 async fn main() {
+    // Initialize logging
+    env_logger::init();
+    
+    // Get environment variables
+    let frontend_url = env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:5173".to_string());
+    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
+    
     // Initialize database
     let db = Database::new().await.expect("Failed to initialize database");
     
-    // Get GitHub token from environment variable
-    let github_token = env::var("GITHUB_TOKEN").unwrap_or_else(|_| {
-        println!("Warning: GITHUB_TOKEN not set. Using unauthenticated requests (rate limited).");
-        String::new()
+    // Initialize GitHub scorer
+    let scorer = Arc::new(GitHubScorer::new());
+    
+    // Initialize HTTP client
+    let client = Arc::new(reqwest::Client::new());
+    
+    // Create app state
+    let state = Arc::new(AppState {
+        scorer,
+        client,
+        db,
     });
-
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(
-        reqwest::header::USER_AGENT,
-        "github-score-api".parse().unwrap()
-    );
-
-    if !github_token.is_empty() {
-        headers.insert(
-            reqwest::header::AUTHORIZATION,
-            format!("Bearer {}", github_token).parse().unwrap()
-        );
-    }
-
-    let state = AppState {
-        scorer: Arc::new(GitHubScorer::new()),
-        client: Arc::new(reqwest::Client::builder()
-            .default_headers(headers)
-            .build()
-            .unwrap()),
-        db: Arc::new(db),
-    };
-
+    
+    // Configure CORS
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
-
+        .allow_origin(frontend_url.parse::<HeaderValue>().unwrap())
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers(tower_http::cors::Any)
+        .allow_credentials(true);
+    
+    // Build router
     let app = Router::new()
         .route("/api/score", post(score_user))
+        .route("/api/health", get(health_check))
         .layer(cors)
         .with_state(state);
-
-    println!("Server running on http://localhost:3001");
     
-    let listener = TcpListener::bind("0.0.0.0:3001").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    // Start server
+    let addr = format!("0.0.0.0:{}", port);
+    println!("Server running on http://{}", addr);
+    
+    axum::Server::bind(&addr.parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
 
 async fn score_user(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<ScoreRequest>,
 ) -> Result<Json<ScoreResponse>, (StatusCode, Json<GitHubError>)> {
     println!("Received request for username: {}", payload.username);
@@ -480,4 +481,8 @@ async fn score_user(
     }
 
     Ok(Json(response))
+}
+
+async fn health_check() -> &'static str {
+    "OK"
 } 

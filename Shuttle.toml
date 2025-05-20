@@ -1,0 +1,6 @@
+[project]
+name = "github-score-api"
+type = "rust"
+
+[project.sqlite]
+name = "github_cache.db" 

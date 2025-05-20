@@ -112,4 +112,84 @@ npm run dev
 cargo run
 ```
 
+## Deployment
+
+The project is split into two parts:
+1. Frontend (SvelteKit) - Deployed on Netlify
+2. Backend (Rust) - Deployed on Shuttle.dev
+
+### Frontend Deployment (Netlify)
+
+1. Create a Netlify account and install the Netlify CLI:
+   ```bash
+   npm install -g netlify-cli
+   ```
+
+2. Link your project to Netlify:
+   ```bash
+   netlify link
+   ```
+
+3. Add environment variables in Netlify dashboard:
+   ```
+   VITE_API_URL=https://your-backend-url.shuttleapp.rs
+   ```
+
+4. Deploy:
+   ```bash
+   netlify deploy --prod
+   ```
+
+### Backend Deployment (Shuttle)
+
+1. Create a Shuttle account and install the Shuttle CLI:
+   ```bash
+   cargo install cargo-shuttle
+   ```
+
+2. Login to Shuttle:
+   ```bash
+   cargo shuttle login
+   ```
+
+3. Initialize your project:
+   ```bash
+   cargo shuttle init
+   ```
+
+4. Add environment variables in Shuttle dashboard:
+   ```
+   GITHUB_TOKEN=your_github_token
+   FRONTEND_URL=https://your-frontend-domain.netlify.app
+   ```
+
+5. Deploy:
+   ```bash
+   cargo shuttle deploy
+   ```
+
+### CI/CD Setup
+
+1. Add the following secrets to your GitHub repository:
+   - `NETLIFY_AUTH_TOKEN`
+   - `NETLIFY_SITE_ID`
+   - `SHUTTLE_TOKEN`
+
+2. Push to main branch to trigger deployment:
+   ```bash
+   git push origin main
+   ```
+
+### Domain Setup
+
+1. Purchase a domain from your preferred registrar
+2. In Netlify dashboard:
+   - Go to Site settings > Domain management
+   - Add your custom domain
+   - Follow the DNS configuration instructions
+
+3. Set up environment variables:
+   - Frontend: Update `VITE_API_URL` to point to your Shuttle backend
+   - Backend: Update `FRONTEND_URL` to your Netlify frontend domain
+
 
