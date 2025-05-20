@@ -57,7 +57,7 @@ jobs:
           echo "build directory not found"
         fi
       
-#    - name: Install Shuttle CLI
+#    - name: Install Shuttle CLI 
 #      run: cargo install cargo-shuttle
       
     - name: Deploy to Netlify
