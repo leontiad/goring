@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main ]
 
+# Add permissions block at the workflow level
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -61,6 +67,7 @@ jobs:
 #      run: cargo install cargo-shuttle
       
     - name: Deploy to Netlify
+      id: deploy  # Add an ID to reference the step
       uses: nwtgck/actions-netlify@v2
       with:
         publish-dir: 'build'
@@ -85,12 +92,15 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const deployUrl = process.env.NETLIFY_DEPLOY_URL || 'https://682c99c8944158aeb0143e6a--statuesque-biscuit-e22447.netlify.app';
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `🚀 Preview deployed to: ${deployUrl}`
-          });
-      env:
-        NETLIFY_DEPLOY_URL: ${{ steps.deploy.outputs.netlify_url }}
+          try {
+            const deployUrl = '${{ steps.deploy.outputs.netlify_url }}' || 'https://682c99c8944158aeb0143e6a--statuesque-biscuit-e22447.netlify.app';
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployed to: ${deployUrl}`
+            });
+          } catch (error) {
+            console.log('Failed to create PR comment:', error.message);
+            // Don't fail the workflow if comment creation fails
+          }
