@@ -79,6 +79,7 @@ pub struct GitHubScorer {
     repo_significance_params: HashMap<String, f64>,
     code_quality_params: HashMap<String, f64>,
     community_params: HashMap<String, f64>,
+    token: Option<String>,
 }
 
 impl Default for GitHubScorer {
@@ -117,6 +118,7 @@ impl Default for GitHubScorer {
             repo_significance_params,
             code_quality_params,
             community_params,
+            token: None,
         }
     }
 }
@@ -124,6 +126,12 @@ impl Default for GitHubScorer {
 impl GitHubScorer {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_token(token: String) -> Self {
+        let mut scorer = Self::default();
+        scorer.token = Some(token);
+        scorer
     }
 
     pub fn calculate_score(&self, user: &GitHubUser) -> Result<DetailedScores, ScoringError> {

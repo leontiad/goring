@@ -3,7 +3,7 @@ use axum::{
     Router,
     Json,
     extract::State,
-    http::{StatusCode, HeaderValue, Method, HeaderName},
+    http::{StatusCode, HeaderValue, Method},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -131,19 +131,48 @@ async fn main() {
             println!("PORT not set, defaulting to 3001");
             "3001".to_string()
         });
+
+    let github_token = env::var("GITHUB_TOKEN")
+        .unwrap_or_else(|_| {
+            println!("WARNING: GITHUB_TOKEN not set. API requests will be rate limited.");
+            String::new()
+        });
     
     println!("Starting server with configuration:");
     println!("Frontend URL: {}", frontend_url);
     println!("Port: {}", port);
+    println!("GitHub Token: {}", if github_token.is_empty() { "Not set" } else { "Set" });
     
     // Initialize database
     let db = Arc::new(Database::new().await.expect("Failed to initialize database"));
     
-    // Initialize GitHub scorer
-    let scorer = Arc::new(GitHubScorer::new());
+    // Initialize GitHub scorer with token if available
+    let scorer = if !github_token.is_empty() {
+        Arc::new(GitHubScorer::with_token(github_token.clone()))
+    } else {
+        Arc::new(GitHubScorer::new())
+    };
     
-    // Initialize HTTP client
-    let client = Arc::new(reqwest::Client::new());
+    // Initialize HTTP client with GitHub token if available
+    let client = if !github_token.is_empty() {
+        Arc::new(reqwest::Client::builder()
+            .user_agent("github-score-api")
+            .default_headers({
+                let mut headers = reqwest::header::HeaderMap::new();
+                headers.insert(
+                    reqwest::header::AUTHORIZATION,
+                    format!("Bearer {}", github_token).parse().unwrap()
+                );
+                headers
+            })
+            .build()
+            .expect("Failed to build HTTP client"))
+    } else {
+        Arc::new(reqwest::Client::builder()
+            .user_agent("github-score-api")
+            .build()
+            .expect("Failed to build HTTP client"))
+    };
     
     // Create app state
     let state = Arc::new(AppState {
@@ -401,20 +430,49 @@ async fn score_user(
     }
 
     // Convert the GitHub API responses to our internal types
+    println!("Converting API responses to internal types...");
+    
     let user = GitHubUser {
         login: payload.username.clone(),
         repositories: all_repos.clone().into_iter()
-            .filter_map(|r| serde_json::from_value(r).ok())
+            .filter_map(|r| {
+                match serde_json::from_value(r.clone()) {
+                    Ok(repo) => Some(repo),
+                    Err(e) => {
+                        println!("Failed to parse repository: {}", e);
+                        None
+                    }
+                }
+            })
             .collect(),
         events: events.clone().into_iter()
-            .filter_map(|e| serde_json::from_value(e).ok())
+            .filter_map(|e| {
+                match serde_json::from_value(e.clone()) {
+                    Ok(event) => Some(event),
+                    Err(e) => {
+                        println!("Failed to parse event: {}", e);
+                        None
+                    }
+                }
+            })
             .collect(),
         pull_requests: pulls.into_iter()
-            .filter_map(|p| serde_json::from_value(p).ok())
+            .filter_map(|p| {
+                match serde_json::from_value(p.clone()) {
+                    Ok(pr) => Some(pr),
+                    Err(e) => {
+                        println!("Failed to parse pull request: {}", e);
+                        None
+                    }
+                }
+            })
             .collect(),
     };
 
     println!("Calculating score for user: {}", user.login);
+    println!("Repositories: {}", user.repositories.len());
+    println!("Events: {}", user.events.len());
+    println!("Pull Requests: {}", user.pull_requests.len());
 
     // Calculate score
     let score = state.scorer.calculate_score(&user)
