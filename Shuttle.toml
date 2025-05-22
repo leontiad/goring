@@ -1,6 +1,11 @@
 [project]
 name = "github-score-api"
-type = "rust"
+runtime = "rust"
+framework = "axum"
+
+[env]
+FRONTEND_URL = "https://statuesque-biscuit-e22447.netlify.app/"
+GITHUB_TOKEN = "{secrets.GITHUB_TOKEN}"
 
 [project.sqlite]
 name = "github_cache.db" 

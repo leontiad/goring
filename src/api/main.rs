@@ -3,11 +3,10 @@ use axum::{
     Router,
     Json,
     extract::State,
-    http::{StatusCode, HeaderValue, Method},
+    http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tower_http::cors::CorsLayer;
 use github_score_api::scoring::{GitHubScorer, GitHubUser, DetailedScores};
 use reqwest;
 use serde_json::Value;
@@ -16,6 +15,11 @@ use std::env;
 use github_score_api::db::{Database, models::{CachedUser, CachedScore}};
 use chrono::Utc;
 use env_logger;
+
+#[cfg(feature = "shuttle")]
+use shuttle_axum::ShuttleAxum;
+#[cfg(feature = "shuttle")]
+use shuttle_axum::AxumService;
 
 #[derive(Clone)]
 struct AppState {
@@ -114,6 +118,7 @@ async fn handle_github_response<T: for<'de> serde::Deserialize<'de>>(
     ))
 }
 
+#[cfg(not(feature = "shuttle"))]
 #[tokio::main]
 async fn main() {
     // Initialize logging
@@ -194,13 +199,80 @@ async fn main() {
         .route("/api/health", get(health_check))
         .layer(cors)
         .with_state(state);
-    
+
     // Start server
     let addr = format!("0.0.0.0:{}", port);
     println!("Server running on http://{}", addr);
     
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+#[cfg(feature = "shuttle")]
+#[shuttle_runtime::main]
+async fn shuttle_main() -> shuttle_axum::ShuttleAxum {
+    // Get environment variables with better defaults and error handling
+    let frontend_url = env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| {
+            println!("FRONTEND_URL not set, defaulting to https://statuesque-biscuit-e22447.netlify.app/");
+            "https://statuesque-biscuit-e22447.netlify.app/".to_string()
+        });
+    
+    let github_token = env::var("GITHUB_TOKEN")
+        .unwrap_or_else(|_| {
+            println!("WARNING: GITHUB_TOKEN not set. API requests will be rate limited.");
+            String::new()
+        });
+    
+    println!("Starting Shuttle server with configuration:");
+    println!("Frontend URL: {}", frontend_url);
+    println!("GitHub Token: {}", if github_token.is_empty() { "Not set" } else { "Set" });
+    
+    // Initialize database
+    let db = Arc::new(Database::new().await.expect("Failed to initialize database"));
+    
+    // Initialize GitHub scorer with token if available
+    let scorer = if !github_token.is_empty() {
+        Arc::new(GitHubScorer::with_token(github_token.clone()))
+    } else {
+        Arc::new(GitHubScorer::new())
+    };
+    
+    // Initialize HTTP client with GitHub token if available
+    let client = if !github_token.is_empty() {
+        Arc::new(reqwest::Client::builder()
+            .user_agent("github-score-api")
+            .default_headers({
+                let mut headers = reqwest::header::HeaderMap::new();
+                headers.insert(
+                    reqwest::header::AUTHORIZATION,
+                    format!("Bearer {}", github_token).parse().unwrap()
+                );
+                headers
+            })
+            .build()
+            .expect("Failed to build HTTP client"))
+    } else {
+        Arc::new(reqwest::Client::builder()
+            .user_agent("github-score-api")
+            .build()
+            .expect("Failed to build HTTP client"))
+    };
+    
+    // Create app state
+    let state = Arc::new(AppState {
+        scorer,
+        client,
+        db,
+    });
+    
+    // Build router
+    let app = Router::new()
+        .route("/api/score", post(score_user))
+        .route("/api/health", get(health_check))
+        .with_state(state);
+
+    Ok(app.into())
 }
 
 async fn score_user(

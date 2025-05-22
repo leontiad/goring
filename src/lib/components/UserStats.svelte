@@ -27,7 +27,7 @@
 
   onMount(async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/score`, {
+      const response = await fetch(`https://goring-hg3o.shuttle.app/api/score`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
