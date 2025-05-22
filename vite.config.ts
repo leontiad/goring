@@ -5,7 +5,7 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
 		proxy: {
-			'/api': {
+			'api': {
 				target: process.env.VITE_API_URL || 'https://goring-hg3o.shuttle.app',
 				changeOrigin: true,
 				secure: false
