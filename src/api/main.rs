@@ -15,6 +15,7 @@ use std::env;
 use github_score_api::db::{Database, models::{CachedUser, CachedScore}};
 use chrono::Utc;
 use env_logger;
+use tower_http::cors::{CorsLayer, Any};
 
 #[cfg(feature = "shuttle")]
 use shuttle_axum::ShuttleAxum;
@@ -266,10 +267,18 @@ async fn shuttle_main() -> shuttle_axum::ShuttleAxum {
         db,
     });
     
+    // Configure CORS
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any)
+        .allow_credentials(false);
+    
     // Build router
     let app = Router::new()
         .route("/api/score", post(score_user))
         .route("/api/health", get(health_check))
+        .layer(cors)
         .with_state(state);
 
     Ok(app.into())
