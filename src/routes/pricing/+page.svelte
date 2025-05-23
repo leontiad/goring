@@ -8,7 +8,7 @@
       name: "Free",
       price: "$0",
       annualPrice: "$0",
-      description: "Unlimited executions.",
+      description: "Feel it",
       features: [
         "Basic Scoring",
         "20 accounts per month"
