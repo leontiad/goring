@@ -90,9 +90,15 @@
           {/each}
         </ul>
 
-        <button class="cta-button">
-          {plan.cta}
-        </button>
+        {#if plan.cta === 'Get in touch'}
+          <a href="mailto:contact@goring.dev" class="cta-button">
+            {plan.cta}
+          </a>
+        {:else}
+          <button class="cta-button">
+            {plan.cta}
+          </button>
+        {/if}
       </div>
     {/each}
   </div>
@@ -177,6 +183,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    box-sizing: border-box;
   }
 
   .plan-card:hover {
@@ -243,11 +250,16 @@
     cursor: pointer;
     transition: all 0.2s ease;
     margin-top: auto;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    box-sizing: border-box;
   }
 
   .cta-button:hover {
     background: var(--accent-hover);
     transform: translateY(-2px);
+    text-decoration: none;
   }
 
   @media (max-width: 768px) {
