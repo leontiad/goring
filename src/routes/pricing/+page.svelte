@@ -174,6 +174,9 @@
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
   .plan-card:hover {
@@ -211,6 +214,7 @@
     list-style: none;
     padding: 0;
     margin: 0 0 var(--spacing-xl) 0;
+    flex-grow: 1;
   }
 
   .features li {
@@ -238,6 +242,7 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin-top: auto;
   }
 
   .cta-button:hover {
