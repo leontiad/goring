@@ -10,9 +10,8 @@
       annualPrice: "$0",
       description: "Unlimited executions.",
       features: [
-        "Scoring accounts",
-        "Comparisons",
-        "20 profiles"
+        "Basic Scoring",
+        "20 accounts per month"
       ],
       cta: "Get Started",
       highlighted: false
@@ -21,7 +20,7 @@
       name: "Recruiters",
       price: "$99/mo",
       annualPrice: "$1,188/yr",
-      description: "For advanced Recruiters",
+      description: "For Recruiters",
       features: [
         "Advanced ML",
         "Store your results",
@@ -34,7 +33,7 @@
       name: "Enterprise",
       price: "$299/mo",
       annualPrice: "$3,588/yr",
-      description: "For advanced HR departments",
+      description: "For HR departments",
       features: [
         "Advanced ML",
         "Store your results",
@@ -49,7 +48,7 @@
 
 <div class="pricing" in:fade>
   <div class="header">
-    <h1>Optimize your search</h1>
+    <h1>Pricing</h1>
     <p class="subtitle">Choose the plan that best fits your needs</p>
   </div>
 
