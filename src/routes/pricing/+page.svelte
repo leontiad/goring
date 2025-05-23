@@ -6,7 +6,8 @@
   const plans = [
     {
       name: "Free",
-      price: "$0/mo",
+      price: "$0",
+      annualPrice: "$0",
       description: "Unlimited executions.",
       features: [
         "Scoring accounts",
@@ -18,7 +19,8 @@
     },
     {
       name: "Recruiters",
-      price: "from $120/mo",
+      price: "$99/mo",
+      annualPrice: "$1,188/yr",
       description: "For advanced Recruiters",
       features: [
         "Advanced ML",
@@ -30,7 +32,8 @@
     },
     {
       name: "Enterprise",
-      price: "from $299/mo",
+      price: "$299/mo",
+      annualPrice: "$3,588/yr",
       description: "For advanced HR departments",
       features: [
         "Advanced ML",
@@ -39,7 +42,7 @@
         "Use our custom model"
       ],
       cta: "Get in touch",
-      highlighted: true
+      highlighted: false
     }
   ];
 </script>
@@ -69,10 +72,10 @@
 
   <div class="plans-grid">
     {#each plans as plan}
-      <div class="plan-card" class:highlighted={plan.highlighted}>
+      <div class="plan-card">
         <div class="card-header">
           <h2>{plan.name}</h2>
-          <div class="price">{plan.price}</div>
+          <div class="price">{selectedFrequency === 'monthly' ? plan.price : plan.annualPrice}</div>
           <p class="description">{plan.description}</p>
         </div>
         
@@ -87,7 +90,7 @@
           {/each}
         </ul>
 
-        <button class="cta-button" class:highlighted={plan.highlighted}>
+        <button class="cta-button">
           {plan.cta}
         </button>
       </div>
@@ -160,7 +163,7 @@
 
   .plans-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-xl);
     margin-top: var(--spacing-xl);
   }
@@ -176,9 +179,6 @@
   .plan-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-  }
-
-  .plan-card.highlighted {
     border-color: var(--accent);
     background: linear-gradient(to bottom, var(--card-bg), var(--background-secondary));
   }
@@ -243,10 +243,6 @@
   .cta-button:hover {
     background: var(--accent-hover);
     transform: translateY(-2px);
-  }
-
-  .cta-button.highlighted {
-    background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
   }
 
   @media (max-width: 768px) {

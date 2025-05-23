@@ -56,13 +56,6 @@
           </svg>
           Compare
         </a>
-        <a href="/trending" class:active={$page.url.pathname === '/trending'}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-            <polyline points="17 6 23 6 23 12"></polyline>
-          </svg>
-          Trending
-        </a>
         <a href="/pricing" class:active={$page.url.pathname === '/pricing'}>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="1" x2="12" y2="23"></line>
@@ -71,38 +64,36 @@
           Pricing
         </a>
         <div class="more-menu-container">
-          <button class="more-button" on:click={toggleMoreMenu}>
+          <button class="more-button">
             More
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
-          {#if isMoreMenuOpen}
-            <div class="more-menu" transition:fade={{ duration: 150 }}>
-              <a href="/roadmap" class:active={$page.url.pathname === '/roadmap'}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 20V10"></path>
-                  <path d="M18 20V4"></path>
-                  <path d="M6 20v-4"></path>
-                </svg>
-                Roadmap
-              </a>
-              <a href="/blog" class:active={$page.url.pathname === '/blog'}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                </svg>
-                Blog
-              </a>
-              <a href="/jobs" class:active={$page.url.pathname === '/jobs'}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                </svg>
-                Jobs
-              </a>
-            </div>
-          {/if}
+          <div class="more-menu">
+            <a href="/roadmap" class:active={$page.url.pathname === '/roadmap'}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20V10"></path>
+                <path d="M18 20V4"></path>
+                <path d="M6 20v-4"></path>
+              </svg>
+              Roadmap
+            </a>
+            <a href="/blog" class:active={$page.url.pathname === '/blog'}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              Blog
+            </a>
+            <a href="/jobs" class:active={$page.url.pathname === '/jobs'}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              Jobs
+            </a>
+          </div>
         </div>
       </nav>
     </div>
@@ -223,7 +214,8 @@
   .more-menu {
     position: absolute;
     top: 100%;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     margin-top: var(--spacing-sm);
     background: var(--background-secondary);
     border: 1px solid var(--border);
@@ -232,6 +224,14 @@
     min-width: 180px;
     box-shadow: var(--shadow-lg);
     z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .more-menu-container:hover .more-menu {
+    opacity: 1;
+    visibility: visible;
   }
 
   .more-menu a {

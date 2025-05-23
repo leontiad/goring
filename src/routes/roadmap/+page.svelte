@@ -16,8 +16,8 @@
       month: 'May',
       items: [
         {
-          title: 'Settable permissions within object storage by folders',
-          description: 'Currently the workspace object storage is all or nothing. You can either see the object explorer or not, and you can either write and read everywhere or not. This would be a settable setting such that the layout within the buckets can follow the standard u/ and f/ layouts and that list, read and write permissions would be inherited from the folder permissions.',
+          title: 'Production v1',
+          description: 'Authorization, Rate limiting, fine tuning weights',
           category: 'Backend'
         }
       ]

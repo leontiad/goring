@@ -138,22 +138,22 @@
     flex: 1;
     padding: 1rem;
     border-radius: 0.5rem;
-    border: 1px solid #2a2a2a;
-    background: #1a1a1a;
-    color: #ffffff;
+    border: 1px solid var(--border);
+    background: var(--background-secondary);
+    color: var(--text);
     font-size: 1rem;
   }
 
   input:focus {
     outline: none;
-    border-color: #3a3a3a;
-    background: #222222;
+    border-color: var(--accent);
+    background: var(--background);
   }
 
   .vs {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #4a4a4a;
+    color: var(--text-secondary);
     padding: 0 1rem;
   }
 
@@ -161,16 +161,17 @@
     padding: 1rem 2rem;
     border-radius: 0.5rem;
     border: none;
-    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-    color: #ffffff;
+    background: var(--accent);
+    color: white;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
   }
 
   button:hover {
-    opacity: 0.9;
+    background: var(--accent-hover);
+    transform: translateY(-2px);
   }
 
   button:disabled {
