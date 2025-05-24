@@ -16,7 +16,8 @@ const config = {
 			split: false
 		}),
 		paths: {
-			relative: false,
+			base: '',
+			relative: false
 		},
 		prerender: {
 			handleHttpError: ({ path, referrer, message }) => {

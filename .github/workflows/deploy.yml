@@ -71,7 +71,7 @@ jobs:
       id: deploy  # Add an ID to reference the step
       uses: nwtgck/actions-netlify@v2
       with:
-        publish-dir: '.svelte-kit/netlify'
+        publish-dir: 'build'
         production-branch: main
         github-token: ${{ secrets.GITHUB_TOKEN }}
         deploy-message: "Deploy from GitHub Actions"
