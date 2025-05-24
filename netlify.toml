@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "rm -rf .svelte-kit && npm run build"
   publish = ".svelte-kit/netlify"
 
 [build.environment]
