@@ -41,3 +41,5 @@ dist-ssr
 .netlify
 .shuttle*
 Secrets*.toml
+
+_redirects
