@@ -3,10 +3,4 @@
   publish = ".svelte-kit/netlify"
 
 [build.environment]
-  NODE_VERSION = "20"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/entry"
-  status = 200
-  force = true 
+  NODE_VERSION = "20" 
