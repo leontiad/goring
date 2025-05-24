@@ -48,7 +48,7 @@
     } catch (e) {
       console.error('Unexpected error:', e);
       goto('/login?error=' + encodeURIComponent('Authentication failed'));
-    }
+      }
     });
   </script>
 
