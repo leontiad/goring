@@ -1,11 +1,6 @@
 [build]
   command = "npm run build"
-  publish = "build"
+  publish = ".svelte-kit/netlify"
 
 [build.environment]
-  NODE_VERSION = "20"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200 
+  NODE_VERSION = "20" 
