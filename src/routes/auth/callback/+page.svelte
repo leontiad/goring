@@ -5,52 +5,63 @@
   import { page } from '$app/stores';
   
     onMount(async () => {
-    console.log('Callback page mounted');
-    console.log('Current URL:', window.location.href);
-    console.log('URL search params:', Object.fromEntries(new URLSearchParams(window.location.search)));
-
     try {
+      console.log('[Callback] Page mounted');
+      console.log('[Callback] Current URL:', window.location.href);
+      console.log('[Callback] URL search params:', Object.fromEntries(new URLSearchParams(window.location.search)));
+
       // Get the code from the URL
       const code = new URLSearchParams(window.location.search).get('code');
       if (!code) {
-        throw new Error('No auth code received');
+        console.error('[Callback] No code found in URL');
+        goto('/login?error=' + encodeURIComponent('No authorization code found'));
+        return;
       }
 
-      console.log('Exchanging code for session...');
-      // Let Supabase handle the PKCE flow
+      console.log('[Callback] Found code:', {
+        codeLength: code.length,
+        codePrefix: code.substring(0, 10) + '...'
+      });
+
+      // Exchange the code for a session
+      console.log('[Callback] Exchanging code for session...');
       const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
       
       if (error) {
-        console.error('Auth error:', error);
+        console.error('[Callback] Auth error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         goto('/login?error=' + encodeURIComponent(error.message));
         return;
       }
 
       if (!session) {
-        console.error('No session in response');
+        console.error('[Callback] No session in response');
         goto('/login?error=' + encodeURIComponent('No session established'));
         return;
       }
 
-      console.log('Session established successfully');
-      console.log('Session details:', {
+      console.log('[Callback] Session established successfully:', {
         user: session.user?.email,
-        expires_at: session.expires_at,
-        access_token_length: session.access_token.length,
-        refresh_token_length: session.refresh_token?.length
+        expiresAt: session.expires_at,
+        accessTokenLength: session.access_token.length,
+        refreshTokenLength: session.refresh_token?.length
       });
 
-      // Wait a moment to ensure the session is properly set
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       // Redirect to home page
+      console.log('[Callback] Redirecting to home...');
       goto('/');
     } catch (e) {
-      console.error('Unexpected error:', e);
+      console.error('[Callback] Unexpected error:', {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      });
       goto('/login?error=' + encodeURIComponent('Authentication failed'));
-      }
-    });
-  </script>
+    }
+  });
+</script>
 
 <div class="callback-container">
   <div class="loading-spinner"></div>

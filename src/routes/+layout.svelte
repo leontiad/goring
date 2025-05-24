@@ -6,38 +6,51 @@
   import { browser } from '$app/environment';
   import '../app.css';
 
-  onMount(() => {
+  onMount(async () => {
     if (!browser) return;
-
+    
     console.log('Layout mounted, checking initial session...');
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session ? 'present' : 'missing');
-      if (session) {
-        console.log('Session details:', {
-          access_token: session.access_token.substring(0, 10) + '...',
-          expires_at: new Date(session.expires_at! * 1000).toISOString(),
-          user: session.user.email
-        });
-      }
-    });
+    
+    // Check if we're on the callback route
+    const isCallbackRoute = window.location.pathname.startsWith('/auth/callback');
+    if (isCallbackRoute) {
+      console.log('On callback route, skipping initial session check');
+      return;
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', {
-        event,
-        hasSession: !!session,
-        path: window.location.pathname,
-        search: window.location.search
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      console.log('Initial session found:', {
+        user: session.user?.email,
+        expires_at: session.expires_at
+      });
+    } else {
+      console.log('No initial session found');
+    }
+  });
+
+  if (browser) {
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', { 
+        event, 
+        hasSession: !!session, 
+        path: window.location.pathname, 
+        search: window.location.search 
       });
       
-      if (session) {
+      // Check if we're on the callback route
+      const isCallbackRoute = window.location.pathname.startsWith('/auth/callback');
+      if (isCallbackRoute) {
+        console.log('On callback route, skipping auth state change handling');
+        return;
+      }
+
+      if (event === 'SIGNED_IN' && session) {
         console.log('Session details on change:', {
           access_token: session.access_token.substring(0, 10) + '...',
-          expires_at: new Date(session.expires_at! * 1000).toISOString(),
-          user: session.user.email
+          expires_at: session.expires_at,
+          user: session.user?.email
         });
-      }
-      
-      if (event === 'SIGNED_IN') {
         console.log('User signed in, redirecting to home');
         goto('/');
       } else if (event === 'SIGNED_OUT') {
@@ -45,12 +58,7 @@
         goto('/login');
       }
     });
-
-    return () => {
-      console.log('Unsubscribing from auth state changes');
-      subscription.unsubscribe();
-    };
-  });
+  }
 </script>
 
 <slot />
