@@ -6,7 +6,8 @@
   import Layout from '$lib/components/Layout.svelte';
   import UserStats from '$lib/components/UserStats.svelte';
   import { endpoints } from '$lib/config';
-  
+  import { page } from '$app/stores';
+
   let username = '';
   let usernames = '';
   let loading = false;
@@ -38,6 +39,12 @@
     merged_at: string | null;
   }
   
+  
+  onMount(() => {
+    console.log('Home page mounted');
+    console.log('Session:', $page.data.session);
+  });
+
   async function searchUser() {
     if (!username) return;
     
@@ -127,12 +134,12 @@
         <button on:click={searchUser} disabled={loading}>
           {loading ? 'Analyzing...' : 'Analyze'}
         </button>
-      </div>
+    </div>
 
       {#if error}
         <div class="error-message">{error}</div>
       {/if}
-    </section>
+  </section>
 
     {#if score}
       <section class="score-section">
@@ -261,13 +268,13 @@
   .final-score {
     text-align: center;
     margin-bottom: 2rem;
-  }
+    }
 
   .score-label {
     color: #a0a0a0;
     font-size: 1rem;
     margin-bottom: 0.5rem;
-  }
+    }
 
   .score-value {
     font-size: 4rem;
