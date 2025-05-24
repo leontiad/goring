@@ -32,20 +32,21 @@
   async function handleGitHubLogin() {
     if (!browser) return;
     
-    console.log('GitHub login button clicked');
+    console.log('[Login] GitHub login button clicked');
     try {
       loading = true;
       errorMessage = null;
       
       const callbackUrl = `${window.location.origin}/auth/callback`;
-      console.log('Callback URL:', callbackUrl);
+      console.log('[Login] Callback URL:', callbackUrl);
       
-      console.log('Initiating GitHub OAuth...');
+      console.log('[Login] Initiating GitHub OAuth...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo: callbackUrl,
           scopes: 'read:user user:email',
+          skipBrowserRedirect: false,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -53,11 +54,19 @@
         }
       });
 
-      console.log('OAuth response:', { data, error });
-      console.log('OAuth URL:', data?.url);
+      console.log('[Login] OAuth response:', { 
+        hasData: !!data,
+        hasError: !!error,
+        url: data?.url,
+        error: error?.message
+      });
       
       if (error) {
-        console.error('Auth error:', error);
+        console.error('[Login] Auth error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         throw error;
       }
 
@@ -65,10 +74,13 @@
         throw new Error('No redirect URL received from Supabase');
       }
 
-      console.log('Redirecting to GitHub:', data.url);
+      console.log('[Login] Redirecting to GitHub:', data.url);
       window.location.href = data.url;
     } catch (e) {
-      console.error('Login error:', e);
+      console.error('[Login] Error:', {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      });
       errorMessage = e instanceof Error ? e.message : 'An error occurred during login';
       loading = false;
     }
@@ -77,32 +89,37 @@
   async function handleGoogleLogin() {
     if (!browser) return;
     
-    console.log('Google login button clicked');
+    console.log('[Login] Google login button clicked');
     try {
       loading = true;
       errorMessage = null;
       
       const callbackUrl = `${window.location.origin}/auth/callback`;
-      console.log('Callback URL:', callbackUrl);
+      console.log('[Login] Callback URL:', callbackUrl);
       
-      console.log('Initiating Google OAuth...');
+      console.log('[Login] Initiating Google OAuth...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: callbackUrl,
           scopes: 'email profile',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
+          skipBrowserRedirect: false
         }
       });
 
-      console.log('OAuth response:', { data, error });
-      console.log('OAuth URL:', data?.url);
+      console.log('[Login] OAuth response:', { 
+        hasData: !!data,
+        hasError: !!error,
+        url: data?.url,
+        error: error?.message
+      });
       
       if (error) {
-        console.error('Auth error:', error);
+        console.error('[Login] Auth error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         throw error;
       }
 
@@ -110,10 +127,13 @@
         throw new Error('No redirect URL received from Supabase');
       }
 
-      console.log('Redirecting to Google:', data.url);
+      console.log('[Login] Redirecting to Google:', data.url);
       window.location.href = data.url;
     } catch (e) {
-      console.error('Login error:', e);
+      console.error('[Login] Error:', {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      });
       errorMessage = e instanceof Error ? e.message : 'An error occurred during login';
       loading = false;
     }
