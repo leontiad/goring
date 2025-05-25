@@ -44,7 +44,17 @@
   interface GitHubPullRequest {
     merged_at: string | null;
   }
-  
+
+  interface GitHubProfile {
+    company: string | null;
+    blog: string | null;
+    location: string | null;
+    email: string | null;
+    hireable: boolean | null;
+    bio: string | null;
+  }
+
+  let profileInfo: GitHubProfile | null = null;
   
   onMount(() => {
     console.log('Home page mounted');
@@ -110,14 +120,21 @@
           code_quality: data.score.component_scores.code_quality * 100,
           community_engagement: data.score.component_scores.community_engagement * 100
         };
+
+        const profileResponse = await fetch(`https://api.github.com/users/${username}`);
+        if (profileResponse.ok) {
+          profileInfo = await profileResponse.json();
+        }
       } else {
         const errorData = await response.json();
         error = errorData.error || 'Failed to fetch score';
         score = null;
+        profileInfo = null;
       }
     } catch (err) {
       error = 'An error occurred while fetching the score';
       score = null;
+      profileInfo = null;
     } finally {
       loading = false;
     }
@@ -188,6 +205,51 @@
           <h2>{score.username}</h2>
           <div class="rating">{score.rating}</div>
         </div>
+
+        {#if profileInfo}
+          <div class="profile-info">
+            {#if profileInfo.bio}
+              <div class="bio">{profileInfo.bio}</div>
+            {/if}
+            <div class="info-grid">
+              {#if profileInfo.company}
+                <div class="info-item">
+                  <span class="label">Company</span>
+                  <span class="value">{profileInfo.company}</span>
+                </div>
+              {/if}
+              {#if profileInfo.location}
+                <div class="info-item">
+                  <span class="label">Location</span>
+                  <span class="value">{profileInfo.location}</span>
+                </div>
+              {/if}
+              {#if profileInfo.blog}
+                <div class="info-item">
+                  <span class="label">Website</span>
+                  <a href={profileInfo.blog} target="_blank" rel="noopener noreferrer" class="value link">
+                    {profileInfo.blog}
+                  </a>
+                </div>
+              {/if}
+              {#if profileInfo.email}
+                <div class="info-item">
+                  <span class="label">Email</span>
+                  <a href="mailto:{profileInfo.email}" class="value link">
+                    {profileInfo.email}
+                  </a>
+                </div>
+              {/if}
+              {#if profileInfo.hireable}
+                <div class="info-item">
+                  <span class="label">Status</span>
+                  <span class="value available">Available for hire</span>
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
+
         <div class="final-score">
           <div class="score-label">Final Score</div>
           <div class="score-value">{score.final_score.toFixed(2)}%</div>
@@ -331,5 +393,60 @@
     font-size: 3rem;
     font-weight: 700;
     color: var(--text);
+  }
+
+  .profile-info {
+    background: var(--background-secondary);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+  }
+
+  .bio {
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .value {
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  .link {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .link:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+  }
+
+  .available {
+    color: var(--success);
+    font-weight: 500;
   }
 </style>
