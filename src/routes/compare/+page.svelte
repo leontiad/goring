@@ -1,52 +1,95 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import Layout from '$lib/components/Layout.svelte';
-  import ComparisonView from '$lib/components/ComparisonView.svelte';
+  import { goto } from '$app/navigation';
   import type { GitHubScore } from '$lib/types';
+  import ComparisonView from '$lib/components/ComparisonView.svelte';
+  import Layout from '$lib/components/Layout.svelte';
+  import UsernameAutocomplete from '$lib/components/UsernameAutocomplete.svelte';
+  import { debounce } from '$lib/utils';
 
-  let username1 = '';
-  let username2 = '';
+  let usernames = '';
   let loading = false;
   let error: string | null = null;
-  let user1: GitHubScore | null = null;
-  let user2: GitHubScore | null = null;
+  let comparisonScores: GitHubScore[] = [];
+  let suggestions: { login: string; avatar_url: string }[] = [];
+  let showDropdown = false;
+  let currentInput = '';
 
-  async function compareUsers() {
-    if (!username1.trim() || !username2.trim()) {
-      error = 'Please enter both GitHub usernames';
+  async function searchUsers(query: string) {
+    if (query.length < 2) {
+      suggestions = [];
       return;
     }
 
+    try {
+      const response = await fetch(`https://api.github.com/search/users?q=${query}&per_page=5`);
+      if (response.ok) {
+        const data = await response.json();
+        suggestions = data.items;
+      }
+    } catch (error) {
+      console.error('Failed to fetch user suggestions:', error);
+    }
+  }
+
+  const debouncedSearch = debounce(searchUsers, 300);
+
+  function handleInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    currentInput = input.value;
+    showDropdown = true;
+    debouncedSearch(currentInput);
+  }
+
+  function handleSelect(selectedUsername: string) {
+    if (usernames) {
+      usernames += ', ' + selectedUsername;
+    } else {
+      usernames = selectedUsername;
+    }
+    showDropdown = false;
+    currentInput = '';
+  }
+
+  async function compareUsers() {
+    if (!usernames) return;
+    
     loading = true;
     error = null;
-
+    comparisonScores = [];
+    
     try {
-      // TODO: Replace with actual API calls
-      const mockScore1: GitHubScore = {
-        username: username1,
-        rating: 'A+',
-        final_score: 85,
-        contribution_score: 90,
-        repository_significance: 80,
-        code_quality: 85,
-        community_engagement: 75
-      };
+      const usernamesList = usernames.split(',').map(u => u.trim()).filter(Boolean);
+      const scores = await Promise.all(
+        usernamesList.map(async (username) => {
+          const response = await fetch(`https://goring-hg3o.shuttle.app/api/score`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+          });
 
-      const mockScore2: GitHubScore = {
-        username: username2,
-        rating: 'A',
-        final_score: 80,
-        contribution_score: 85,
-        repository_significance: 75,
-        code_quality: 80,
-        community_engagement: 80
-      };
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to fetch score for ${username}`);
+          }
 
-      user1 = mockScore1;
-      user2 = mockScore2;
-    } catch (e) {
-      error = 'Failed to fetch user data';
-      console.error(e);
+          const data = await response.json();
+          return {
+            username: username,
+            rating: data.rating,
+            final_score: data.score.final_score * 100,
+            contribution_score: data.score.component_scores.contribution_weight * 100,
+            repository_significance: data.score.component_scores.repo_significance * 100,
+            code_quality: data.score.component_scores.code_quality * 100,
+            community_engagement: data.score.component_scores.community_engagement * 100
+          };
+        })
+      );
+      comparisonScores = scores;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'An unknown error occurred';
     } finally {
       loading = false;
     }
@@ -56,92 +99,84 @@
 <Layout>
   <div class="page">
     <section class="hero-section">
-      <h1>Compare Developers</h1>
-      <p class="subtitle">Compare GitHub profiles side by side</p>
+      <h1>Compare GitHub Profiles</h1>
+      <p class="subtitle">Compare scores between different GitHub users</p>
     </section>
 
     <section class="search-section">
       <div class="search-container">
-        <div class="input-group">
-          <input
-            type="text"
-            bind:value={username1}
-            placeholder="First GitHub username"
-            on:keydown={(e) => e.key === 'Enter' && compareUsers()}
-          />
-          <div class="vs">VS</div>
-          <input
-            type="text"
-            bind:value={username2}
-            placeholder="Second GitHub username"
-            on:keydown={(e) => e.key === 'Enter' && compareUsers()}
-          />
-        </div>
-        <button on:click={compareUsers} disabled={loading}>
-          {loading ? 'Comparing...' : 'Compare'}
+        <input
+          type="text"
+          placeholder="Enter GitHub usernames (comma-separated)"
+          bind:value={usernames}
+          on:input={handleInput}
+          disabled={loading}
+        />
+        <button on:click={compareUsers} disabled={loading || !usernames}>
+          {loading ? 'Loading...' : 'Compare'}
         </button>
       </div>
-
+      <UsernameAutocomplete
+        username={currentInput}
+        suggestions={suggestions}
+        isLoading={loading}
+        {showDropdown}
+        onSelect={handleSelect}
+      />
       {#if error}
         <div class="error-message">{error}</div>
       {/if}
     </section>
 
-    {#if user1 && user2}
-      <ComparisonView {user1} {user2} />
+    {#if comparisonScores.length > 0}
+      <ComparisonView scores={comparisonScores} />
     {/if}
   </div>
 </Layout>
 
 <style>
   .page {
-    padding: 2rem;
+    padding: 1.5rem;
   }
 
   .hero-section {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
 
   h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
     background: linear-gradient(135deg, #ffffff, #a0a0a0);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .subtitle {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: #a0a0a0;
   }
 
   .search-section {
-    max-width: 800px;
-    margin: 0 auto 3rem;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    position: relative;
   }
 
   .search-container {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .input-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   input {
     flex: 1;
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
     border: 1px solid var(--border);
     background: var(--background-secondary);
     color: var(--text);
-    font-size: 1rem;
+    font-size: 0.875rem;
   }
 
   input:focus {
@@ -150,20 +185,13 @@
     background: var(--background);
   }
 
-  .vs {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    padding: 0 1rem;
-  }
-
   button {
-    padding: 1rem 2rem;
+    padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
     border: none;
     background: var(--accent);
     color: white;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -180,11 +208,12 @@
   }
 
   .error-message {
-    margin-top: 1rem;
-    padding: 1rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
     background: rgba(255, 0, 0, 0.1);
     color: #ff4444;
     text-align: center;
+    font-size: 0.875rem;
   }
 </style> 
