@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import type { GitHubScore } from '$lib/types';
   import ScoreBreakdown from '$lib/components/ScoreBreakdown.svelte';
   import ComparisonView from '$lib/components/ComparisonView.svelte';
@@ -7,6 +8,8 @@
   import UserStats from '$lib/components/UserStats.svelte';
   import { endpoints } from '$lib/config';
   import { page } from '$app/stores';
+  import UsernameAutocomplete from '$lib/components/UsernameAutocomplete.svelte';
+  import { debounce } from '$lib/utils';
 
   let username = '';
   let usernames = '';
@@ -17,6 +20,9 @@
   let rating: string | null = null;
   let componentScores: any = null;
   let detailedComponents: any = null;
+  let suggestions: { login: string; avatar_url: string }[] = [];
+  let showDropdown = false;
+  let searchTimeout: NodeJS.Timeout;
   
   interface GitHubRepo {
     name: string;
@@ -45,47 +51,75 @@
     console.log('Session:', $page.data.session);
   });
 
-  async function searchUser() {
+  async function searchUsers(query: string) {
+    if (query.length < 2) {
+      suggestions = [];
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://api.github.com/search/users?q=${query}&per_page=5`);
+      if (response.ok) {
+        const data = await response.json();
+        suggestions = data.items;
+      }
+    } catch (error) {
+      console.error('Failed to fetch user suggestions:', error);
+    }
+  }
+
+  const debouncedSearch = debounce(searchUsers, 300);
+
+  function handleInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    username = input.value;
+    showDropdown = true;
+    debouncedSearch(username);
+  }
+
+  function handleSelect(selectedUsername: string) {
+    username = selectedUsername;
+    showDropdown = false;
+    handleSubmit();
+  }
+
+  async function handleSubmit() {
     if (!username) return;
-    
+
     loading = true;
     error = null;
-    
+    showDropdown = false;
+
     try {
-        // Call our scoring API with just the username
-        const scoreResponse = await fetch(endpoints.score, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username })
-        });
+      const response = await fetch(`https://goring-hg3o.shuttle.app/api/score`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username })
+      });
 
-        if (!scoreResponse.ok) {
-            if (scoreResponse.status === 404) {
-                throw new Error('User not found');
-            }
-            throw new Error('Failed to calculate score');
-        }
-
-        const scoreData = await scoreResponse.json();
-        
-        // Update the UI with the score data
+      if (response.ok) {
+        const data = await response.json();
         score = {
-            username: username,
-            rating: scoreData.rating,
-            final_score: scoreData.score.final_score * 100,
-            contribution_score: scoreData.score.component_scores.contribution_weight * 100,
-            repository_significance: scoreData.score.component_scores.repo_significance * 100,
-            code_quality: scoreData.score.component_scores.code_quality * 100,
-            community_engagement: scoreData.score.component_scores.community_engagement * 100
+          username: username,
+          rating: data.rating,
+          final_score: data.score.final_score * 100,
+          contribution_score: data.score.component_scores.contribution_weight * 100,
+          repository_significance: data.score.component_scores.repo_significance * 100,
+          code_quality: data.score.component_scores.code_quality * 100,
+          community_engagement: data.score.component_scores.community_engagement * 100
         };
-        
-    } catch (e: unknown) {
-        error = e instanceof Error ? e.message : 'An unknown error occurred';
+      } else {
+        const errorData = await response.json();
+        error = errorData.error || 'Failed to fetch score';
         score = null;
+      }
+    } catch (err) {
+      error = 'An error occurred while fetching the score';
+      score = null;
     } finally {
-        loading = false;
+      loading = false;
     }
   }
   
@@ -127,19 +161,26 @@
       <div class="search-container">
         <input
           type="text"
-          bind:value={username}
           placeholder="Enter GitHub username"
-          on:keydown={(e) => e.key === 'Enter' && searchUser()}
+          bind:value={username}
+          on:input={handleInput}
+          disabled={loading}
         />
-        <button on:click={searchUser} disabled={loading}>
-          {loading ? 'Analyzing...' : 'Analyze'}
+        <button on:click={handleSubmit} disabled={loading || !username}>
+          {loading ? 'Loading...' : 'Get Score'}
         </button>
-    </div>
-
+      </div>
+      <UsernameAutocomplete
+        {username}
+        suggestions={suggestions}
+        isLoading={loading}
+        {showDropdown}
+        onSelect={handleSelect}
+      />
       {#if error}
         <div class="error-message">{error}</div>
       {/if}
-  </section>
+    </section>
 
     {#if score}
       <section class="score-section">
@@ -185,6 +226,7 @@
   .search-section {
     max-width: 600px;
     margin: 0 auto 2rem;
+    position: relative;
   }
 
   .search-container {
