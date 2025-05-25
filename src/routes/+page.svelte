@@ -144,12 +144,12 @@
     {#if score}
       <section class="score-section">
         <div class="score-header">
-          <h2>{username}</h2>
-          <div class="rating">{rating}</div>
+          <h2>{score.username}</h2>
+          <div class="rating">{score.rating}</div>
         </div>
         <div class="final-score">
           <div class="score-label">Final Score</div>
-          <div class="score-value">{score.final_score}%</div>
+          <div class="score-value">{score.final_score.toFixed(2)}%</div>
         </div>
         <ScoreBreakdown {score} />
         <UserStats {score} />
@@ -160,46 +160,46 @@
 
 <style>
   .page {
-    padding: 2rem;
+    padding: 1.5rem;
   }
 
   .hero-section {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
 
   h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
     background: linear-gradient(135deg, #ffffff, #a0a0a0);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .subtitle {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: #a0a0a0;
   }
 
   .search-section {
     max-width: 600px;
-    margin: 0 auto 3rem;
+    margin: 0 auto 2rem;
   }
 
   .search-container {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   input {
     flex: 1;
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
     border: 1px solid var(--border);
     background: var(--background-secondary);
     color: var(--text);
-    font-size: 1rem;
+    font-size: 0.875rem;
   }
 
   input:focus {
@@ -209,12 +209,12 @@
   }
 
   button {
-    padding: 1rem 2rem;
+    padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
     border: none;
     background: var(--accent);
     color: white;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -231,54 +231,63 @@
   }
 
   .error-message {
-    margin-top: 1rem;
-    padding: 1rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
     background: rgba(255, 0, 0, 0.1);
     color: #ff4444;
     text-align: center;
+    font-size: 0.875rem;
   }
 
   .score-section {
-    background: linear-gradient(135deg, #111111, #1a1a1a);
-    border-radius: 1rem;
-    padding: 2rem;
-    border: 1px solid #2a2a2a;
-    margin-bottom: 3rem;
+    background: var(--background);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    margin-bottom: 2rem;
   }
 
   .score-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .score-header h2 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text);
   }
 
   .rating {
-    font-size: 1.25rem;
-    color: #a0a0a0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
   }
 
   .final-score {
     text-align: center;
-    margin-bottom: 2rem;
-    }
+    margin-bottom: 1.5rem;
+    background: var(--background-secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+  }
 
   .score-label {
-    color: #a0a0a0;
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-    }
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+  }
 
   .score-value {
-    font-size: 4rem;
+    font-size: 3rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text);
   }
 </style>
