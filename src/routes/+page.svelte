@@ -52,6 +52,7 @@
     email: string | null;
     hireable: boolean | null;
     bio: string | null;
+    twitter_username: string | null;
   }
 
   let profileInfo: GitHubProfile | null = null;
@@ -237,6 +238,19 @@
                   <span class="label">Email</span>
                   <a href="mailto:{profileInfo.email}" class="value link">
                     {profileInfo.email}
+                  </a>
+                </div>
+              {/if}
+              {#if profileInfo.twitter_username}
+                <div class="info-item">
+                  <span class="label">Twitter</span>
+                  <a 
+                    href="https://twitter.com/{profileInfo.twitter_username}" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="value link"
+                  >
+                    @{profileInfo.twitter_username}
                   </a>
                 </div>
               {/if}
