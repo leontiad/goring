@@ -53,6 +53,7 @@
     hireable: boolean | null;
     bio: string | null;
     twitter_username: string | null;
+    name: string | null;
   }
 
   let profileInfo: GitHubProfile | null = null;
@@ -220,6 +221,9 @@
 
         {#if profileInfo}
           <div class="profile-info">
+            {#if profileInfo.name}
+              <div class="name">{profileInfo.name}</div>
+            {/if}
             {#if profileInfo.bio}
               <div class="bio">{profileInfo.bio}</div>
             {/if}
@@ -426,6 +430,13 @@
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     border: 1px solid var(--border);
+  }
+
+  .name {
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
   }
 
   .bio {
