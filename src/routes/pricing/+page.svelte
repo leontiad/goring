@@ -93,6 +93,10 @@
           <a href="mailto:contact@goring.dev" class="cta-button">
             {plan.cta}
           </a>
+        {:else if plan.name === 'Free'}
+          <a href="/" class="cta-button">
+            {plan.cta}
+          </a>
         {:else}
           <button class="cta-button">
             {plan.cta}

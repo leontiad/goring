@@ -10,7 +10,7 @@
   <div class="metrics-grid">
     <div class="metric-card">
       <h3>Contribution Score</h3>
-      <div class="metric-value">{score.contribution_score}%</div>
+      <div class="metric-value">{score.contribution_score.toFixed(2)}%</div>
       <div class="progress-bar">
         <div class="progress" style="width: {score.contribution_score}%"></div>
       </div>
@@ -18,7 +18,7 @@
     
     <div class="metric-card">
       <h3>Repository Significance</h3>
-      <div class="metric-value">{score.repository_significance}%</div>
+      <div class="metric-value">{score.repository_significance.toFixed(2)}%</div>
       <div class="progress-bar">
         <div class="progress" style="width: {score.repository_significance}%"></div>
       </div>
@@ -26,7 +26,7 @@
     
     <div class="metric-card">
       <h3>Code Quality</h3>
-      <div class="metric-value">{score.code_quality}%</div>
+      <div class="metric-value">{score.code_quality.toFixed(2)}%</div>
       <div class="progress-bar">
         <div class="progress" style="width: {score.code_quality}%"></div>
       </div>
@@ -34,7 +34,7 @@
     
     <div class="metric-card">
       <h3>Community Engagement</h3>
-      <div class="metric-value">{score.community_engagement}%</div>
+      <div class="metric-value">{score.community_engagement.toFixed(2)}%</div>
       <div class="progress-bar">
         <div class="progress" style="width: {score.community_engagement}%"></div>
       </div>
@@ -44,58 +44,58 @@
 
 <style>
   .score-breakdown {
-    background: linear-gradient(135deg, #111111, #1a1a1a);
-    border-radius: 1rem;
-    padding: 2rem;
-    border: 1px solid #2a2a2a;
-    margin-top: 2rem;
+    background: var(--background);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    margin-top: 1.5rem;
   }
 
   h2 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 1.5rem;
+    color: var(--text);
+    margin-bottom: 1rem;
   }
 
   .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .metric-card {
-    background: #1a1a1a;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    border: 1px solid #2a2a2a;
+    background: var(--background-secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
   }
 
   .metric-card h3 {
-    color: #a0a0a0;
-    font-size: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
 
   .metric-value {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 1rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
   }
 
   .progress-bar {
-    height: 6px;
-    background: #2a2a2a;
-    border-radius: 3px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
     overflow: hidden;
   }
 
   .progress {
     height: 100%;
-    background: linear-gradient(90deg, #3a3a3a, #4a4a4a);
-    border-radius: 3px;
+    background: var(--accent);
+    border-radius: 2px;
     transition: width 0.3s ease;
   }
 </style> 

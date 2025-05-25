@@ -276,8 +276,8 @@ async fn shuttle_main() -> shuttle_axum::ShuttleAxum {
     
     // Build router
     let app = Router::new()
-        .route("/score", post(score_user))
-        .route("/health", get(health_check))
+    .route("/api/score", post(score_user))
+    .route("/api/health", get(health_check))
         .layer(cors)
         .with_state(state);
 
