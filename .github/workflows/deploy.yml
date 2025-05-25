@@ -46,7 +46,6 @@ jobs:
     - name: Build frontend
       run: |
         echo "Starting build..."
-        cat .env >> $GITHUB_ENV
         npm run build
         echo "Build completed"
         
