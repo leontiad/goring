@@ -23,7 +23,7 @@
     <div class="comparison-column">
       <div class="final-score">
         <div class="score-label">Final Score</div>
-        <div class="score-value">{user1.final_score}%</div>
+        <div class="score-value">{user1.final_score.toFixed(2)}%</div>
       </div>
       <ScoreBreakdown score={user1} />
     </div>
@@ -31,7 +31,7 @@
     <div class="comparison-column">
       <div class="final-score">
         <div class="score-label">Final Score</div>
-        <div class="score-value">{user2.final_score}%</div>
+        <div class="score-value">{user2.final_score.toFixed(2)}%</div>
       </div>
       <ScoreBreakdown score={user2} />
     </div>
