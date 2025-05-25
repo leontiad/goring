@@ -28,8 +28,6 @@ A comprehensive API for analyzing and scoring GitHub users based on their contri
 ## Features
 
 - Comprehensive GitHub user analysis
-- Caching system for improved performance
-- Rate limit handling
 - Detailed scoring breakdown
 - RESTful API endpoints
 
