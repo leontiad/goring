@@ -122,9 +122,20 @@
           community_engagement: data.score.component_scores.community_engagement * 100
         };
 
-        const profileResponse = await fetch(`https://api.github.com/users/${username}`);
-        if (profileResponse.ok) {
-          profileInfo = await profileResponse.json();
+        try {
+          const profileResponse = await fetch(`https://api.github.com/users/${username}`);
+          if (profileResponse.ok) {
+            profileInfo = await profileResponse.json();
+          } else if (profileResponse.status === 403) {
+            console.warn('GitHub API rate limit exceeded');
+            profileInfo = null;
+          } else {
+            console.warn('Failed to fetch GitHub profile');
+            profileInfo = null;
+          }
+        } catch (profileError) {
+          console.error('Error fetching GitHub profile:', profileError);
+          profileInfo = null;
         }
       } else {
         const errorData = await response.json();
