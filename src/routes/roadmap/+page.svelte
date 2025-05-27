@@ -17,7 +17,7 @@
       items: [
         {
           title: 'Production v1',
-          description: 'Authorization, Rate limiting, fine tuning weights',
+          description: 'Authorization, Rate limiting, Fine tuning weights',
           category: 'Backend'
         }
       ]
