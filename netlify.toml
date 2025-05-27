@@ -1,7 +1,7 @@
 [build]
   command = "rm -rf .svelte-kit && npm run build"
   publish = ".svelte-kit/netlify"
-
+ 
 [[headers]]
   for = "/*"
   [headers.values]
