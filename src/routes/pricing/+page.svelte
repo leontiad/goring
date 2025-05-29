@@ -93,7 +93,7 @@
         </ul>
 
         {#if plan.cta === 'Get in touch'}
-          <a href="mailto:cysoc-info@gmail.com" class="cta-button">
+          <a href="mailto:cysoc.info@gmail.com" class="cta-button">
             {plan.cta}
           </a>
         {:else if plan.name === 'Free'}
