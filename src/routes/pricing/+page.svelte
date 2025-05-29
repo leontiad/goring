@@ -37,7 +37,7 @@
       annualPrice: "$3,588/yr",
       description: "For HR departments",
       features: [
-        "Cold: Arbitrary date range"
+        "Cold: Arbitrary date range",
         "Advanced ML",
         "Store your results",
         "Unlimited accounts",
