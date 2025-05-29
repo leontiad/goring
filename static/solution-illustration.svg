@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Elements -->
+  <rect x="100" y="100" width="600" height="400" rx="20" fill="url(#gradient1)" opacity="0.1"/>
+  
+  <!-- Analysis Process Flow -->
+  <g transform="translate(150, 200)">
+    <!-- Input -->
+    <circle cx="0" cy="0" r="40" fill="url(#gradient2)"/>
+    <text x="0" y="5" text-anchor="middle" fill="white" font-size="24">GitHub</text>
+    
+    <!-- Arrow -->
+    <path d="M60 0 L140 0" stroke="url(#gradient3)" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="140,0 130,-5 130,5" fill="url(#gradient3)"/>
+    
+    <!-- Analysis -->
+    <rect x="160" y="-40" width="120" height="80" rx="10" fill="url(#gradient4)"/>
+    <text x="220" y="5" text-anchor="middle" fill="white" font-size="16">Analysis</text>
+    
+    <!-- Arrow -->
+    <path d="M300 0 L380 0" stroke="url(#gradient3)" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="380,0 370,-5 370,5" fill="url(#gradient3)"/>
+    
+    <!-- Score -->
+    <circle cx="460" cy="0" r="40" fill="url(#gradient5)"/>
+    <text x="460" y="5" text-anchor="middle" fill="white" font-size="24">Score</text>
+  </g>
+  
+  <!-- Score Breakdown -->
+  <g transform="translate(150, 400)">
+    <rect x="0" y="0" width="500" height="100" rx="10" fill="url(#gradient6)" opacity="0.8"/>
+    
+    <!-- Score Bars -->
+    <g transform="translate(20, 20)">
+      <!-- Code Quality -->
+      <rect x="0" y="0" width="460" height="10" rx="5" fill="url(#gradient7)" opacity="0.2"/>
+      <rect x="0" y="0" width="400" height="10" rx="5" fill="url(#gradient7)"/>
+      <text x="0" y="30" fill="white" font-size="12">Code Quality</text>
+      
+      <!-- Community -->
+      <rect x="0" y="40" width="460" height="10" rx="5" fill="url(#gradient8)" opacity="0.2"/>
+      <rect x="0" y="40" width="350" height="10" rx="5" fill="url(#gradient8)"/>
+      <text x="0" y="70" fill="white" font-size="12">Community Engagement</text>
+    </g>
+  </g>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="gradient1" x1="100" y1="100" x2="700" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient2" x1="-40" y1="-40" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient3" x1="60" y1="0" x2="140" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient4" x1="160" y1="-40" x2="280" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient5" x1="420" y1="-40" x2="500" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient6" x1="150" y1="400" x2="650" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient7" x1="0" y1="0" x2="460" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradient8" x1="0" y1="40" x2="460" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg> 
