@@ -182,34 +182,90 @@
 
 <Layout>
   <div class="page">
-    <section class="hero-section">
-      <h1>GitHub Score</h1>
-      <p class="subtitle">Analyze and compare GitHub developer profiles</p>
+    <section id="hero" class="hero-section">
+      <div class="hero-content">
+        <h1>GitHub Score</h1>
+        <p class="subtitle">The intelligent way to evaluate developer profiles</p>
+        <div class="cta-buttons">
+          <a href="/dashboard" class="primary-button">Try It Now</a>
+          <a href="/pricing" class="secondary-button">View Pricing</a>
+        </div>
+      </div>
     </section>
 
-    <section class="search-section">
-      <div class="search-container">
-        <input
-          type="text"
-          placeholder="Enter GitHub username"
-          bind:value={username}
-          on:input={handleInput}
-          disabled={loading}
-        />
-        <button on:click={handleSubmit} disabled={loading || !username}>
-          {loading ? 'Loading...' : 'Get Score'}
-        </button>
+    <section id="problem" class="problem-section">
+      <div class="section-content">
+        <h2>The Problem</h2>
+        <div class="problem-cards">
+          <div class="problem-card">
+            <div class="icon">⏰</div>
+            <h3>Wasted Time</h3>
+            <p>Recruiters spend hours manually analyzing GitHub profiles, often missing key indicators of developer quality.</p>
+          </div>
+          <div class="problem-card">
+            <div class="icon">📊</div>
+            <h3>Inconsistent Evaluation</h3>
+            <p>Different recruiters evaluate profiles differently, leading to biased and inconsistent hiring decisions.</p>
+          </div>
+          <div class="problem-card">
+            <div class="icon">🎯</div>
+            <h3>Irrelevant Interviews</h3>
+            <p>Developers waste time in interviews that don't match their actual skill level or experience.</p>
+          </div>
+        </div>
       </div>
-      <UsernameAutocomplete
-        {username}
-        suggestions={suggestions}
-        isLoading={loading}
-        {showDropdown}
-        onSelect={handleSelect}
-      />
-      {#if error}
-        <div class="error-message">{error}</div>
-      {/if}
+    </section>
+
+    <section id="solution" class="solution-section">
+      <div class="section-content">
+        <h2>The Solution</h2>
+        <div class="solution-grid">
+          <div class="visual-card">
+            <h4>Code Quality</h4>
+            <p>Analyzes code complexity, documentation, and best practices to assess technical proficiency.</p>
+          </div>
+          <div class="visual-card">
+            <h4>Repository Impact</h4>
+            <p>Evaluates project significance through stars, forks, and community engagement.</p>
+          </div>
+          <div class="visual-card">
+            <h4>Contribution Patterns</h4>
+            <p>Examines commit frequency, PR quality, and issue resolution efficiency.</p>
+          </div>
+          <div class="visual-card">
+            <h4>Community Engagement</h4>
+            <p>Measures collaboration through discussions, reviews, and open source contributions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features-section">
+      <div class="section-content">
+        <h2>Key Features</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="icon">🔍</div>
+            <h3>Comprehensive Analysis</h3>
+            <p>Deep dive into code quality, contribution patterns, and community impact.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">⚡</div>
+            <h3>Instant Results</h3>
+            <p>Get detailed scores and insights in seconds, not hours.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">📈</div>
+            <h3>Comparative Analysis</h3>
+            <p>Compare multiple profiles side by side to make informed decisions.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🔄</div>
+            <h3>Real-time Updates</h3>
+            <p>Scores update automatically as developers contribute to GitHub.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     {#if score}
@@ -292,62 +348,270 @@
 
 <style>
   .page {
-    padding: 1.5rem;
+    overflow-x: hidden;
+  }
+
+  section {
+    min-height: 80vh;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero {
+    min-height: 100vh;
+    padding: 6rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .problem {
+    min-height: 100vh;
+    padding: 6rem 2rem;
+    background: var(--background);
+  }
+
+  .solution {
+    min-height: 100vh;
+    padding: 6rem 2rem;
+    background: var(--background);
+  }
+
+  .features {
+    min-height: 100vh;
+    padding: 6rem 2rem;
+    background: var(--background);
+  }
+
+  .section-content {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
   }
 
   .hero-section {
+    background: linear-gradient(135deg, var(--background) 0%, var(--background-secondary) 100%);
     text-align: center;
-    margin-bottom: 2rem;
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-content {
+    max-width: 800px;
+    margin: 0 auto;
   }
 
   h1 {
-    font-size: 2.5rem;
+    font-size: 4rem;
     font-weight: 700;
     background: linear-gradient(135deg, #ffffff, #a0a0a0);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
   }
 
   .subtitle {
-    font-size: 1.125rem;
-    color: #a0a0a0;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
   }
 
-  .search-section {
-    max-width: 600px;
-    margin: 0 auto 2rem;
-    position: relative;
+  .cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .primary-button, .secondary-button {
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .primary-button {
+    background: var(--accent);
+    color: white;
+  }
+
+  .primary-button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+  }
+
+  .secondary-button {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .secondary-button:hover {
+    background: var(--background-secondary);
+    transform: translateY(-2px);
+  }
+
+  .problem-section {
+    background: var(--background);
+    min-height: 80vh;
+  }
+
+  .problem-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .problem-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 2rem;
+    transition: all 0.2s ease;
+  }
+
+  .problem-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .solution-section {
+    background: var(--background);
+    min-height: 80vh;
+  }
+
+  .solution-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
+    max-width: 1000px;
+    margin: 2rem auto 0;
+  }
+
+  .visual-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+
+  .visual-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .visual-card h4 {
+    color: var(--accent);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+  }
+
+  .visual-card p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .features-section {
+    background: var(--background);
+    min-height: 80vh;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .feature-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  @media (max-width: 768px) {
+    section {
+      padding: 2rem 1rem;
+    }
+
+    .hero-section {
+      min-height: 70vh;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+    }
+
+    .solution-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
   }
 
   .search-container {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
   }
 
   input {
     flex: 1;
-    padding: 0.75rem;
+    padding: 1rem;
     border-radius: 0.5rem;
     border: 1px solid var(--border);
-    background: var(--background-secondary);
+    background: var(--background);
     color: var(--text);
-    font-size: 0.875rem;
+    font-size: 1rem;
   }
 
   input:focus {
     outline: none;
     border-color: var(--accent);
-    background: var(--background);
   }
 
   button {
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem;
     border-radius: 0.5rem;
     border: none;
     background: var(--accent);
     color: white;
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -364,125 +628,7 @@
   }
 
   .error-message {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    background: rgba(255, 0, 0, 0.1);
-    color: #ff4444;
-    text-align: center;
-    font-size: 0.875rem;
-  }
-
-  .score-section {
-    background: var(--background);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    border: 1px solid var(--border);
-    margin-bottom: 2rem;
-  }
-
-  .score-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-  }
-
-  .score-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .rating {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    background: var(--background-secondary);
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    border: 1px solid var(--border);
-  }
-
-  .final-score {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    background: var(--background-secondary);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    border: 1px solid var(--border);
-  }
-
-  .score-label {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .score-value {
-    font-size: 3rem;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .profile-info {
-    background: var(--background-secondary);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--border);
-  }
-
-  .name {
-    color: var(--text);
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-
-  .bio {
-    color: var(--text);
-    font-size: 1rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-
-  .info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .label {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-  }
-
-  .value {
-    color: var(--text);
-    font-size: 1rem;
-  }
-
-  .link {
-    color: var(--accent);
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .link:hover {
-    color: var(--accent-hover);
-    text-decoration: underline;
-  }
-
-  .available {
-    color: var(--success);
-    font-weight: 500;
+    color: #ef4444;
+    margin-top: 1rem;
   }
 </style>

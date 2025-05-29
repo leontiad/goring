@@ -1,35 +1,13 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  import { debounce } from '$lib/utils';
 
-  export let username: string;
   export let onSelect: (username: string) => void;
   export let suggestions: { login: string; avatar_url: string }[] = [];
   export let isLoading = false;
   export let showDropdown = false;
 
   let dropdownRef: HTMLDivElement;
-
-  // Close dropdown when clicking outside
-  function handleClickOutside(event: MouseEvent) {
-    if (dropdownRef && !dropdownRef.contains(event.target as Node)) {
-      showDropdown = false;
-    }
-  }
-
-  onMount(() => {
-    if (browser) {
-      document.addEventListener('click', handleClickOutside);
-    }
-  });
-
-  onDestroy(() => {
-    if (browser) {
-      document.removeEventListener('click', handleClickOutside);
-    }
-  });
 </script>
 
 {#if browser && showDropdown && (suggestions.length > 0 || isLoading)}
@@ -37,6 +15,8 @@
     class="autocomplete-dropdown" 
     bind:this={dropdownRef}
     in:fade={{ duration: 150 }}
+    on:click|stopPropagation
+    on:mousedown|preventDefault
   >
     {#if isLoading}
       <div class="loading-item">
@@ -47,10 +27,11 @@
       {#each suggestions as suggestion}
         <button 
           class="suggestion-item"
-          on:click={() => {
+          on:click|preventDefault|stopPropagation={() => {
             onSelect(suggestion.login);
             showDropdown = false;
           }}
+          on:mousedown|preventDefault
         >
           <img 
             src={suggestion.avatar_url} 

@@ -5,15 +5,16 @@
 
   const plans = [
     {
-      name: "Free",
-      price: "$0",
-      annualPrice: "$0",
+      name: "Starter",
+      price: "$29.99",
+      annualPrice: "$359.88",
       description: "Feel it",
       features: [
+        "Hot: Last 30 days data",
         "Basic Scoring",
-        "20 accounts per month"
+        
       ],
-      cta: "Get Started",
+      cta: "Get in touch",
       highlighted: false
     },
     {
@@ -22,6 +23,7 @@
       annualPrice: "$1,188/yr",
       description: "For Recruiters",
       features: [
+        "Warm: Last year data",
         "Advanced ML",
         "Store your results",
         "50 accounts per month"
@@ -35,6 +37,7 @@
       annualPrice: "$3,588/yr",
       description: "For HR departments",
       features: [
+        "Cold: Arbitrary date range"
         "Advanced ML",
         "Store your results",
         "Unlimited accounts",
@@ -90,7 +93,7 @@
         </ul>
 
         {#if plan.cta === 'Get in touch'}
-          <a href="mailto:contact@goring.dev" class="cta-button">
+          <a href="mailto:cysoc-info@gmail.com" class="cta-button">
             {plan.cta}
           </a>
         {:else if plan.name === 'Free'}
