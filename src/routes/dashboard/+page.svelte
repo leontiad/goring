@@ -142,44 +142,16 @@
   });
 
   async function handleSubmit() {
-    if (!username || !canSearch) return;
+    if (!username) return;
 
     loading = true;
     error = null;
     showDropdown = false;
 
     try {
-      // First, try to record the search attempt
-      try {
-        const searchResponse = await fetch('/api/search-limit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username })
-        });
-
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          remainingSearches = searchData.remainingSearches;
-          canSearch = searchData.canSearch;
-
-          // Update header search count
-          await updateHeaderSearchCount();
-        } else if (searchResponse.status === 429) {
-          error = 'You have reached your daily search limit. Please try again tomorrow.';
-          await checkSearchLimit(); // Refresh the limit display
-          return;
-        } else {
-          // If database functions don't exist, continue with search anyway
-          console.log('Search tracking not available, continuing with search...');
-        }
-      } catch (searchErr) {
-        // If search tracking fails, continue with the actual search
-        console.log('Search tracking failed, continuing with search...');
-      }
-
-      // Now fetch the score
+      console.log('Fetching score for username:', username);
+      
+      // Test the score API directly first
       const response = await fetch(`https://goring-hg3o.shuttle.app/api/score`, {
         method: 'POST',
         headers: {
@@ -188,8 +160,13 @@
         body: JSON.stringify({ username })
       });
 
+      console.log('Score API response status:', response.status);
+      console.log('Score API response ok:', response.ok);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Score API response data:', data);
+        
         score = {
           username: username,
           rating: data.rating,
@@ -199,6 +176,41 @@
           code_quality: data.score.component_scores.code_quality * 100,
           community_engagement: data.score.component_scores.community_engagement * 100
         };
+
+        // Now record the search after successful score fetch
+        try {
+          console.log('Recording search attempt for username:', username);
+          const searchResponse = await fetch('/api/search-limit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+          });
+
+          console.log('Search limit API response status:', searchResponse.status);
+          console.log('Search limit API response ok:', searchResponse.ok);
+
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            console.log('Search limit API response data:', searchData);
+            remainingSearches = searchData.remainingSearches;
+            canSearch = searchData.canSearch;
+
+            // Update header search count
+            await updateHeaderSearchCount();
+          } else if (searchResponse.status === 429) {
+            error = 'You have reached your daily search limit. Please try again tomorrow.';
+            await checkSearchLimit(); // Refresh the limit display
+            return;
+          } else {
+            // If database functions don't exist, continue with search anyway
+            console.log('Search tracking not available, continuing with search...');
+          }
+        } catch (searchErr) {
+          // If search tracking fails, continue with the actual search
+          console.log('Search tracking failed, continuing with search...', searchErr);
+        }
 
         try {
           const profileResponse = await fetch(`https://api.github.com/users/${username}`);
@@ -216,13 +228,23 @@
           profileInfo = null;
         }
       } else {
-        const errorData = await response.json();
-        error = errorData.error || 'Failed to fetch score';
+        console.error('Score API error status:', response.status);
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Score API error data:', errorData);
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorData = { error: 'Failed to parse error response' };
+        }
+        
+        error = errorData.error || errorData.message || `Failed to fetch score (Status: ${response.status})`;
         score = null;
         profileInfo = null;
       }
     } catch (err) {
-      error = 'An error occurred while fetching the score';
+      console.error('Exception during score fetching:', err);
+      error = err instanceof Error ? err.message : 'An error occurred while fetching the score';
       score = null;
       profileInfo = null;
     } finally {
@@ -242,10 +264,10 @@
           bind:value={username}
           bind:this={searchInput}
           on:input={handleInput}
-          disabled={loading || !canSearch}
+          disabled={loading}
         />
-        <button on:click={handleSubmit} disabled={loading || !username || !canSearch}>
-          {loading ? 'Loading...' : canSearch ? 'Get Score' : 'Limit Reached'}
+        <button on:click={handleSubmit} disabled={loading || !username}>
+          {loading ? 'Loading...' : 'Get Score'}
         </button>
       </div>
       <div class="autocomplete-wrapper">
