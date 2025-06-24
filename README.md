@@ -1,4 +1,3 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/ff928890-7ecc-4cf1-82fa-eaa50693b0db/deploy-status)](https://app.netlify.com/projects/statuesque-biscuit-e22447/deploys)
 [![Deploy](https://github.com/leontiad/goring/actions/workflows/deploy.yml/badge.svg)](https://github.com/leontiad/goring/actions/workflows/deploy.yml)
 # GitHub Score API
 
