@@ -305,7 +305,8 @@ impl GitHubScorer {
         Ok((weighted_score, component_scores))
     }
 
-    fn score_community_engagement(&self, user: &GitHubUser) -> Result<(f64, HashMap<String, f64>), ScoringError> {
+    fn 
+    score_community_engagement(&self, user: &GitHubUser) -> Result<(f64, HashMap<String, f64>), ScoringError> {
         let discussion_events = user.events
             .iter()
             .filter(|e| e.r#type == "IssueCommentEvent" || e.r#type == "CommitCommentEvent")
