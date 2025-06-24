@@ -2,16 +2,48 @@
   import { page } from '$app/stores';
   import { fade } from 'svelte/transition';
   import { onMount } from 'svelte';
+  import { createClient } from '$lib/supabase/client';
+  import { goto } from '$app/navigation';
   import Footer from './Footer.svelte';
 
   let currentTheme = 'dark';
   let isMoreMenuOpen = false;
+  let remainingSearches = 2;
+  const supabase = createClient();
 
   onMount(() => {
     // Get theme from localStorage or default to dark
     currentTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    // Check remaining searches on mount
+    checkRemainingSearches();
+    
+    // Listen for search count updates from dashboard
+    window.addEventListener('updateSearchCount', (event: CustomEvent) => {
+      remainingSearches = event.detail.remainingSearches;
+    });
   });
+
+  async function checkRemainingSearches() {
+    if ($page.data.session?.user) {
+      try {
+        const response = await fetch('/api/search-limit');
+        const data = await response.json();
+        
+        if (response.ok) {
+          remainingSearches = data.remainingSearches;
+        }
+      } catch (err) {
+        console.error('Error checking remaining searches:', err);
+      }
+    }
+  }
+
+  // Watch for user changes and check remaining searches
+  $: if ($page.data.session?.user) {
+    checkRemainingSearches();
+  }
 
   function toggleTheme() {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -21,6 +53,55 @@
 
   function toggleMoreMenu() {
     isMoreMenuOpen = !isMoreMenuOpen;
+  }
+
+  async function signOut() {
+    try {
+      console.log('Starting sign out process...');
+      
+      // Immediately redirect to prevent any Supabase redirects
+      const redirectPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          console.log('Forcing redirect to main page...');
+          window.location.href = '/';
+          resolve();
+        }, 50);
+      });
+      
+      // Sign out in the background
+      const signOutPromise = supabase.auth.signOut({
+        scope: 'local'
+      });
+      
+      // Clear storage immediately
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Wait for redirect to happen
+      await redirectPromise;
+      
+      // Handle sign out result (if it completes before redirect)
+      try {
+        const { error } = await signOutPromise;
+        if (error) {
+          console.error('Sign out error:', error);
+        } else {
+          console.log('Sign out completed successfully');
+        }
+      } catch (err) {
+        console.log('Sign out was interrupted by redirect (expected)');
+      }
+      
+    } catch (err) {
+      console.error('Sign out error:', err);
+      // Fallback - force redirect
+      window.location.href = '/';
+    }
   }
 
   // Close more menu when clicking outside
@@ -92,6 +173,22 @@
     </div>
     
     <div class="header-actions">
+      {#if $page.data.session?.user}
+        <div class="user-info">
+          <span class="welcome-text">Welcome, {$page.data.session.user.email}</span>
+          <div class="search-limit-display">
+            <span class="remaining-searches">{remainingSearches} searches left</span>
+          </div>
+          <button class="sign-out-btn" on:click={signOut}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16,17 21,12 16,7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      {/if}
       <a href="https://github.com/leontiad/goring" target="_blank" rel="noopener noreferrer" class="github-link">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
@@ -259,6 +356,56 @@
     gap: var(--spacing-md);
   }
 
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .welcome-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .search-limit-display {
+    display: flex;
+    align-items: center;
+  }
+
+  .remaining-searches {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 500;
+    background: rgba(var(--accent-rgb), 0.1);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
+
+  .sign-out-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .sign-out-btn:hover {
+    background: var(--card-hover);
+    color: var(--text);
+  }
+
   .theme-toggle {
     background: none;
     border: none;
@@ -321,6 +468,30 @@
       box-shadow: none;
       border: none;
       padding: 0;
+    }
+
+    .user-info {
+      flex-direction: column;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .welcome-text {
+      font-size: 0.75rem;
+    }
+
+    .remaining-searches {
+      font-size: 0.7rem;
+      padding: var(--spacing-xs);
+    }
+
+    .sign-out-btn {
+      font-size: 0.7rem;
+      padding: var(--spacing-xs);
+    }
+
+    .header-actions {
+      gap: var(--spacing-sm);
     }
   }
 

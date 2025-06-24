@@ -7,6 +7,9 @@
   import Layout from '$lib/components/Layout.svelte';
   import UsernameAutocomplete from '$lib/components/UsernameAutocomplete.svelte';
   import { debounce } from '$lib/utils';
+  import type { PageData } from './$types';
+
+  export let data: PageData;
 
   let username = '';
   let loading = false;
@@ -17,10 +20,41 @@
   let searchTimeout: NodeJS.Timeout;
   let profileInfo: any = null;
   let searchInput: HTMLInputElement;
+  let remainingSearches = 2;
+  let canSearch = true;
 
   onMount(() => {
     console.log('Dashboard page mounted');
+    checkSearchLimit();
   });
+
+  async function checkSearchLimit() {
+    try {
+      const response = await fetch('/api/search-limit');
+      const data = await response.json();
+      
+      if (response.ok) {
+        remainingSearches = data.remainingSearches;
+        canSearch = data.canSearch;
+      } else {
+        // If database functions don't exist yet, assume user can search
+        remainingSearches = 2;
+        canSearch = true;
+      }
+    } catch (err) {
+      console.error('Error checking search limit:', err);
+      // If there's an error, assume user can search
+      remainingSearches = 2;
+      canSearch = true;
+    }
+  }
+
+  async function updateHeaderSearchCount() {
+    // Dispatch a custom event to update the header count
+    window.dispatchEvent(new CustomEvent('updateSearchCount', { 
+      detail: { remainingSearches } 
+    }));
+  }
 
   async function searchUsers(query: string) {
     if (query.length < 2) {
@@ -108,13 +142,44 @@
   });
 
   async function handleSubmit() {
-    if (!username) return;
+    if (!username || !canSearch) return;
 
     loading = true;
     error = null;
     showDropdown = false;
 
     try {
+      // First, try to record the search attempt
+      try {
+        const searchResponse = await fetch('/api/search-limit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username })
+        });
+
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          remainingSearches = searchData.remainingSearches;
+          canSearch = searchData.canSearch;
+
+          // Update header search count
+          await updateHeaderSearchCount();
+        } else if (searchResponse.status === 429) {
+          error = 'You have reached your daily search limit. Please try again tomorrow.';
+          await checkSearchLimit(); // Refresh the limit display
+          return;
+        } else {
+          // If database functions don't exist, continue with search anyway
+          console.log('Search tracking not available, continuing with search...');
+        }
+      } catch (searchErr) {
+        // If search tracking fails, continue with the actual search
+        console.log('Search tracking failed, continuing with search...');
+      }
+
+      // Now fetch the score
       const response = await fetch(`https://goring-hg3o.shuttle.app/api/score`, {
         method: 'POST',
         headers: {
@@ -177,10 +242,10 @@
           bind:value={username}
           bind:this={searchInput}
           on:input={handleInput}
-          disabled={loading}
+          disabled={loading || !canSearch}
         />
-        <button on:click={handleSubmit} disabled={loading || !username}>
-          {loading ? 'Loading...' : 'Get Score'}
+        <button on:click={handleSubmit} disabled={loading || !username || !canSearch}>
+          {loading ? 'Loading...' : canSearch ? 'Get Score' : 'Limit Reached'}
         </button>
       </div>
       <div class="autocomplete-wrapper">
@@ -193,6 +258,11 @@
       </div>
       {#if error}
         <div class="error-message">{error}</div>
+      {/if}
+      {#if !canSearch}
+        <div class="limit-warning">
+          You've reached your daily search limit. Try again tomorrow!
+        </div>
       {/if}
     </div>
 
@@ -437,6 +507,11 @@
     font-size: 3rem;
     font-weight: 700;
     color: var(--accent);
+  }
+
+  .limit-warning {
+    color: #ef4444;
+    margin-top: 1rem;
   }
 
   @media (max-width: 768px) {

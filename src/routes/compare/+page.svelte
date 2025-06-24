@@ -117,7 +117,6 @@
         </button>
       </div>
       <UsernameAutocomplete
-        username={currentInput}
         suggestions={suggestions}
         isLoading={loading}
         {showDropdown}
