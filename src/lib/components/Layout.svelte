@@ -20,8 +20,9 @@
     checkRemainingSearches();
     
     // Listen for search count updates from dashboard
-    window.addEventListener('updateSearchCount', (event: CustomEvent) => {
-      remainingSearches = event.detail.remainingSearches;
+    window.addEventListener('updateSearchCount', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      remainingSearches = customEvent.detail.remainingSearches;
     });
   });
 
@@ -53,6 +54,16 @@
 
   function toggleMoreMenu() {
     isMoreMenuOpen = !isMoreMenuOpen;
+  }
+
+  function handleNavigation(route: string) {
+    if ($page.data.session?.user) {
+      // User is authenticated, navigate normally
+      goto(route);
+    } else {
+      // User is not authenticated, dispatch event to show login modal
+      window.dispatchEvent(new CustomEvent('showLoginModal'));
+    }
   }
 
   async function signOut() {
@@ -122,21 +133,29 @@
         <span class="logo-text">GitHub Score</span>
       </a>
       <nav class="nav">
-        <a href="/dashboard" class:active={$page.url.pathname === '/dashboard'}>
+        <button 
+          class="nav-link" 
+          class:active={$page.url.pathname === '/dashboard'}
+          on:click={() => handleNavigation('/dashboard')}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
           Dashboard
-        </a>
-        <a href="/compare" class:active={$page.url.pathname === '/compare'}>
+        </button>
+        <button 
+          class="nav-link" 
+          class:active={$page.url.pathname === '/compare'}
+          on:click={() => handleNavigation('/compare')}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
           </svg>
           Compare
-        </a>
+        </button>
         <a href="/pricing" class:active={$page.url.pathname === '/pricing'}>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="1" x2="12" y2="23"></line>
@@ -227,59 +246,78 @@
 
 <style>
   .layout {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    background: var(--background);
-    color: var(--text);
   }
 
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-md) var(--spacing-xl);
-    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
     background: var(--background);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
   }
 
   .header-left {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xl);
+    gap: 2rem;
   }
 
-  .header-left h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
+  .logo {
+    text-decoration: none;
     color: var(--text);
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+
+  .logo-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .nav {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: 1rem;
   }
 
-  .nav a {
+  .nav-link {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
     color: var(--text-secondary);
-    border-radius: var(--radius-md);
-    transition: all 0.2s ease;
+    text-decoration: none;
     font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
 
-  .nav a:hover {
-    background: var(--card-hover);
+  .nav-link:hover {
     color: var(--text);
+    background: var(--background-secondary);
   }
 
-  .nav a.active {
-    background: var(--accent);
-    color: white;
+  .nav-link.active {
+    color: var(--accent);
+    background: var(--background-secondary);
+  }
+
+  .nav-link svg {
+    width: 20px;
+    height: 20px;
   }
 
   .more-menu-container {
@@ -289,87 +327,83 @@
   .more-button {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    color: var(--text-secondary);
-    background: none;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
     border: none;
-    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
     font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .more-button:hover {
-    background: var(--card-hover);
     color: var(--text);
+    background: var(--background-secondary);
   }
 
   .more-menu {
     position: absolute;
     top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: var(--spacing-sm);
-    background: var(--background-secondary);
+    left: 0;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--background);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm);
-    min-width: 180px;
-    box-shadow: var(--shadow-lg);
-    z-index: 100;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    min-width: 150px;
     opacity: 0;
     visibility: hidden;
+    transform: translateY(-10px);
     transition: all 0.2s ease;
   }
 
   .more-menu-container:hover .more-menu {
     opacity: 1;
     visibility: visible;
+    transform: translateY(0);
   }
 
   .more-menu a {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
     color: var(--text-secondary);
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
+    text-decoration: none;
     font-size: 0.875rem;
-    white-space: nowrap;
+    transition: all 0.2s ease;
   }
 
   .more-menu a:hover {
-    background: var(--card-hover);
     color: var(--text);
+    background: var(--background-secondary);
   }
 
   .more-menu a.active {
-    background: var(--accent);
-    color: white;
+    color: var(--accent);
+    background: var(--background-secondary);
   }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: 1rem;
   }
 
   .user-info {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--background-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    gap: 1rem;
   }
 
   .welcome-text {
     font-size: 0.875rem;
     color: var(--text-secondary);
-    white-space: nowrap;
   }
 
   .search-limit-display {
@@ -379,40 +413,56 @@
 
   .remaining-searches {
     font-size: 0.75rem;
-    color: var(--accent);
-    font-weight: 500;
-    background: rgba(var(--accent-rgb), 0.1);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--radius-sm);
-    white-space: nowrap;
+    color: var(--text-secondary);
+    background: var(--background-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border);
   }
 
   .sign-out-btn {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background: none;
-    border: none;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--background-secondary);
     color: var(--text-secondary);
-    font-size: 0.75rem;
-    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .sign-out-btn:hover {
-    background: var(--card-hover);
+    background: var(--background);
     color: var(--text);
+    border-color: var(--accent);
+  }
+
+  .github-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+  }
+
+  .github-link:hover {
+    color: var(--text);
+    background: var(--background-secondary);
   }
 
   .theme-toggle {
-    background: none;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
     border: none;
+    background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: var(--spacing-xs);
-    border-radius: var(--radius-md);
     transition: all 0.2s ease;
   }
 
@@ -421,29 +471,43 @@
     background: var(--background-secondary);
   }
 
-  .main {
+  main {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .content {
-    flex: 1;
-    padding: var(--spacing-xl);
-    overflow-y: auto;
   }
 
   @media (max-width: 768px) {
     .header {
-      padding: 0 var(--spacing-md);
+      padding: 1rem;
     }
 
     .header-left {
-      gap: var(--spacing-md);
+      gap: 1rem;
     }
 
+    .nav {
+      gap: 0.5rem;
+    }
+
+    .nav-link {
+      padding: 0.5rem;
+    }
+
+    .nav-link span {
+      display: none;
+    }
+
+    .welcome-text {
+      display: none;
+    }
+
+    .user-info {
+      gap: 0.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
     .header-left h1 {
-      font-size: 1.25rem;
+      display: none;
     }
 
     .nav {
@@ -453,66 +517,14 @@
     .nav.open {
       display: flex;
       position: absolute;
-      top: 64px;
+      top: 100%;
       left: 0;
       right: 0;
-      background: var(--background-secondary);
-      padding: var(--spacing-md);
       flex-direction: column;
+      background: var(--background);
       border-bottom: 1px solid var(--border);
+      padding: 1rem;
+      gap: 0.5rem;
     }
-
-    .more-menu {
-      position: static;
-      margin-top: var(--spacing-sm);
-      box-shadow: none;
-      border: none;
-      padding: 0;
-    }
-
-    .user-info {
-      flex-direction: column;
-      gap: var(--spacing-xs);
-      padding: var(--spacing-xs) var(--spacing-sm);
-    }
-
-    .welcome-text {
-      font-size: 0.75rem;
-    }
-
-    .remaining-searches {
-      font-size: 0.7rem;
-      padding: var(--spacing-xs);
-    }
-
-    .sign-out-btn {
-      font-size: 0.7rem;
-      padding: var(--spacing-xs);
-    }
-
-    .header-actions {
-      gap: var(--spacing-sm);
-    }
-  }
-
-  .logo {
-    text-decoration: none;
-    color: var(--text);
-    font-weight: 600;
-    font-size: 1.25rem;
-    transition: color 0.2s ease;
-  }
-
-  .logo:hover {
-    color: var(--accent);
-  }
-
-  .github-link {
-    color: var(--text-secondary);
-    transition: color 0.2s ease;
-  }
-
-  .github-link:hover {
-    color: var(--text);
   }
 </style> 

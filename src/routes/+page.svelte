@@ -82,6 +82,11 @@
       // Clear the error from URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    // Listen for login modal requests from navigation
+    window.addEventListener('showLoginModal', () => {
+      showLoginModal = true;
+    });
   });
 
   function handleTryItNow() {

@@ -10,7 +10,7 @@ export const load: PageServerLoad = async (event) => {
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw redirect(303, '/login');
+    throw redirect(303, '/');
   }
 
   return {
