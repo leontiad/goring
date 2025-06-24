@@ -16,7 +16,7 @@
       if (event === 'SIGNED_IN') {
         goto('/dashboard');
       } else if (event === 'SIGNED_OUT') {
-        goto('/login');
+        goto('/');
       }
     });
 
