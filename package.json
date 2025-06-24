@@ -24,10 +24,13 @@
 		"vite": "^5.0.3"
 	},
 	"dependencies": {
+		"@paypal/checkout-server-sdk": "^1.0.3",
+		"@paypal/paypal-server-sdk": "^1.1.0",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.49.8",
 		"chart.js": "^4.4.9",
 		"frappe-charts": "^1.6.2",
+		"stripe": "^18.2.1",
 		"svelte-chartjs": "^3.1.5"
 	}
 }

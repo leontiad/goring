@@ -7,12 +7,14 @@ export const GET: RequestHandler = async (event) => {
   const code = requestUrl.searchParams.get('code');
   const error = requestUrl.searchParams.get('error');
   const errorDescription = requestUrl.searchParams.get('error_description');
+  const redirectTo = requestUrl.searchParams.get('redirectTo');
 
-  console.log('Auth callback received:', { code: !!code, error, errorDescription });
+  console.log('Auth callback received:', { code: !!code, error, errorDescription, redirectTo });
 
   if (error) {
     console.error('OAuth error:', error, errorDescription);
-    throw redirect(303, '/?error=' + encodeURIComponent(errorDescription || error));
+    const errorUrl = redirectTo ? `${redirectTo}?error=${encodeURIComponent(errorDescription || error)}` : `/?error=${encodeURIComponent(errorDescription || error)}`;
+    throw redirect(303, errorUrl);
   }
 
   if (code) {
@@ -22,15 +24,19 @@ export const GET: RequestHandler = async (event) => {
       
       if (exchangeError) {
         console.error('Session exchange error:', exchangeError);
-        throw redirect(303, '/?error=' + encodeURIComponent(exchangeError.message));
+        const errorUrl = redirectTo ? `${redirectTo}?error=${encodeURIComponent(exchangeError.message)}` : `/?error=${encodeURIComponent(exchangeError.message)}`;
+        throw redirect(303, errorUrl);
       }
       
       console.log('Session exchanged successfully:', !!data.session);
     } catch (err) {
       console.error('Callback error:', err);
-      throw redirect(303, '/?error=Authentication failed');
+      const errorUrl = redirectTo ? `${redirectTo}?error=Authentication failed` : '/?error=Authentication failed';
+      throw redirect(303, errorUrl);
     }
   }
 
-  throw redirect(303, '/');
+  // Redirect to the specified page or default to dashboard
+  const finalRedirectUrl = redirectTo || '/dashboard';
+  throw redirect(303, finalRedirectUrl);
 }; 

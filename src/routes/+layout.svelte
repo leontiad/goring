@@ -14,7 +14,10 @@
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        goto('/dashboard');
+        const currentPath = window.location.pathname;
+        if (currentPath === '/') {
+          goto('/dashboard');
+        }
       } else if (event === 'SIGNED_OUT') {
         goto('/');
       }

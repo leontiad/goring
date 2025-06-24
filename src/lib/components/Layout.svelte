@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import { createClient } from '$lib/supabase/client';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   import Footer from './Footer.svelte';
 
   let currentTheme = 'dark';
@@ -42,7 +43,7 @@
   }
 
   // Watch for user changes and check remaining searches
-  $: if ($page.data.session?.user) {
+  $: if (browser && $page.data.session?.user) {
     checkRemainingSearches();
   }
 
@@ -57,11 +58,17 @@
   }
 
   function handleNavigation(route: string) {
-    if ($page.data.session?.user) {
-      // User is authenticated, navigate normally
+    // Define public routes that don't require authentication
+    const publicRoutes = ['/pricing', '/roadmap', '/blog'];
+    
+    if (publicRoutes.includes(route)) {
+      // Public route - navigate normally
+      goto(route);
+    } else if ($page.data.session?.user) {
+      // Protected route and user is authenticated, navigate normally
       goto(route);
     } else {
-      // User is not authenticated, dispatch event to show login modal
+      // Protected route but user is not authenticated, dispatch event to show login modal
       window.dispatchEvent(new CustomEvent('showLoginModal'));
     }
   }
