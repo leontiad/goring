@@ -14,7 +14,7 @@
   onMount(async () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const subscriptionId = urlParams.get('subscription_id');
+      const subscriptionId = urlParams.get('session_id');
       const paymentIntent = urlParams.get('payment_intent');
       // const isTest = urlParams.get('test') === 'true';
 
