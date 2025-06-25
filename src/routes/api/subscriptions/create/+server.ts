@@ -21,9 +21,9 @@ export const POST: RequestHandler = async (event) => {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { planId, userId } = await event.request.json();
+    const { priceId, userId } = await event.request.json();
 
-    console.log('Subscription creation request:', { planId, userId });
+    console.log('Subscription creation request:', { priceId, userId });
 
     
 
@@ -37,10 +37,13 @@ export const POST: RequestHandler = async (event) => {
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
       line_items: [{
-        price: planId,
+        price: priceId,
         quantity: 1
       }],
-    })
+      mode: 'subscription',
+      success_url: `${env.PUBLIC_SITE_URL || 'http://localhost:5173'}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${env.PUBLIC_SITE_URL || 'http://localhost:5173'}/pricing`,
+    });
     subscriptionId = session.id;
     
     console.log('Payment provider response:', { subscriptionId });
@@ -50,7 +53,7 @@ export const POST: RequestHandler = async (event) => {
     //   .from('subscriptions')
     //   .insert({
     //     user_id: userId,
-    //     plan_id: planId,
+    //     plan_id: priceId,
     //     frequency: frequency,
     //     status: 'pending',
     //     subscription_id: subscriptionId,
