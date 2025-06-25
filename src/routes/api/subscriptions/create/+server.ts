@@ -3,6 +3,11 @@ import type { RequestHandler } from './$types';
 import { createClient } from '$lib/supabase/server';
 import { env } from '$env/dynamic/private';
 import Stripe from "stripe";
+
+if (!env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY environment variable is required');
+}
+
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
 export const POST: RequestHandler = async (event) => {
