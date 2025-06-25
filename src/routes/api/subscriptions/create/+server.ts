@@ -50,25 +50,25 @@ export const POST: RequestHandler = async (event) => {
     console.log('Payment provider response:', { subscriptionId });
     
     // Store subscription in database
-    // const { error: dbError } = await supabase
-    //   .from('subscriptions')
-    //   .insert({
-    //     user_id: userId,
-    //     plan_id: priceId,
-    //     frequency: frequency,
-    //     status: 'pending',
-    //     subscription_id: subscriptionId,
-    //     payment_provider: 'stripe',
-    //     payment_intent_id: paymentIntentId,
-    //     // searches_limit: planDetails.searches,
-    //     // price: planDetails.price,
-    //     created_at: new Date().toISOString()
-    //   });
+    const { error: dbError } = await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: userId,
+        plan_id: priceId,
+        // frequency: frequency,
+        status: 'pending',
+        subscription_id: subscriptionId,
+        payment_provider: 'stripe',
+        payment_intent_id: paymentIntentId,
+        searches_limit: 10,
+        price: 10.00,
+        created_at: new Date().toISOString()
+      });
 
-    // if (dbError) {
-    //   console.error('Database error:', dbError);
-    //   return json({ error: 'Failed to create subscription in database' }, { status: 500 });
-    // }
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return json({ error: 'Failed to create subscription in database' }, { status: 500 });
+    }
 
     console.log('Subscription created successfully');
 

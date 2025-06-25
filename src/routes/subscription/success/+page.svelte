@@ -16,7 +16,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const subscriptionId = urlParams.get('subscription_id');
       const paymentIntent = urlParams.get('payment_intent');
-      const isTest = urlParams.get('test') === 'true';
+      // const isTest = urlParams.get('test') === 'true';
 
       if (!subscriptionId && !paymentIntent) {
         error = 'No subscription information found';
@@ -24,16 +24,16 @@
         return;
       }
 
-      if (isTest) {
-        // Handle test subscription
-        subscriptionData = {
-          id: subscriptionId,
-          status: 'active',
-          test: true
-        };
-        loading = false;
-        return;
-      }
+      // if (isTest) {
+      //   // Handle test subscription
+      //   subscriptionData = {
+      //     id: subscriptionId,
+      //     status: 'active',
+      //     test: true
+      //   };
+      //   loading = false;
+      //   return;
+      // }
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
