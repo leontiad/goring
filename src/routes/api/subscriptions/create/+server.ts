@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { createClient } from '$lib/supabase/server';
 import { env } from '$env/dynamic/private';
 import Stripe from "stripe";
+import { PUBLIC_SITE_URL} from '$env/static/public'
 
 if (!env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY environment variable is required');
@@ -41,8 +42,8 @@ export const POST: RequestHandler = async (event) => {
         quantity: 1
       }],
       mode: 'subscription',
-      success_url: `${env.PUBLIC_SITE_URL || 'http://localhost:5173'}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${env.PUBLIC_SITE_URL || 'http://localhost:5173'}/pricing`,
+        success_url: `${PUBLIC_SITE_URL || 'http://localhost:5173'}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${PUBLIC_SITE_URL || 'http://localhost:5173'}/pricing`,
     });
     subscriptionId = session.id;
     
