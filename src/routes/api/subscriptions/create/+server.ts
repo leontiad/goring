@@ -21,9 +21,9 @@ export const POST: RequestHandler = async (event) => {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { planId, frequency, userId, paymentProvider = 'stripe' } = await event.request.json();
+    const { planId, userId } = await event.request.json();
 
-    console.log('Subscription creation request:', { planId, frequency, userId, paymentProvider });
+    console.log('Subscription creation request:', { planId, userId });
 
     
 
@@ -43,34 +43,33 @@ export const POST: RequestHandler = async (event) => {
     })
     subscriptionId = session.id;
     
-    console.log('Payment provider response:', { subscriptionId, paymentIntentId });
+    console.log('Payment provider response:', { subscriptionId });
     
     // Store subscription in database
-    const { error: dbError } = await supabase
-      .from('subscriptions')
-      .insert({
-        user_id: userId,
-        plan_id: planId,
-        frequency: frequency,
-        status: 'pending',
-        subscription_id: subscriptionId,
-        payment_provider: 'stripe',
-        payment_intent_id: paymentIntentId,
-        // searches_limit: planDetails.searches,
-        // price: planDetails.price,
-        created_at: new Date().toISOString()
-      });
+    // const { error: dbError } = await supabase
+    //   .from('subscriptions')
+    //   .insert({
+    //     user_id: userId,
+    //     plan_id: planId,
+    //     frequency: frequency,
+    //     status: 'pending',
+    //     subscription_id: subscriptionId,
+    //     payment_provider: 'stripe',
+    //     payment_intent_id: paymentIntentId,
+    //     // searches_limit: planDetails.searches,
+    //     // price: planDetails.price,
+    //     created_at: new Date().toISOString()
+    //   });
 
-    if (dbError) {
-      console.error('Database error:', dbError);
-      return json({ error: 'Failed to create subscription in database' }, { status: 500 });
-    }
+    // if (dbError) {
+    //   console.error('Database error:', dbError);
+    //   return json({ error: 'Failed to create subscription in database' }, { status: 500 });
+    // }
 
     console.log('Subscription created successfully');
 
     return json({
-      sessionId:subscriptionId,
-      message: 'Subscription created successfully'
+      sessionId:subscriptionId
     });
 
   } catch (error) {

@@ -86,7 +86,6 @@
         },
         body: JSON.stringify({
           priceId: monthlyPriceID,
-          frequency: selectedFrequency,
           userId: user.id
         })
       });
@@ -95,7 +94,12 @@
         throw new Error('Failed to create subscription');
       }
 
-      const { sessionId, approvalUrl } = await response.json();
+      const { sessionId } = await response.json();
+      
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
+      
       stripe.redirectToCheckout({ sessionId });
       
     } catch (err) {
