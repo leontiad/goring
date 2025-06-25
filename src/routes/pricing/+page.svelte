@@ -2,16 +2,17 @@
   import { fade } from 'svelte/transition';
   import { onMount } from 'svelte';
   import { createClient } from '$lib/supabase/client';
-  
+  import {loadStripe} from '@stripe/stripe-js';
+  import{PUBLIC_STRIPE_PUBLISHABLE_KEY} from '$env/static/public';
+  const monthlyPriceID = 'price_1Rdl47CIhb9RqsL0mGLjD3qY';
+
   let selectedFrequency = 'monthly';
-  let selectedPaymentProvider = 'stripe';
   let loading = false;
   let error: string | null = null;
-  
   const supabase = createClient();
 
   // Reactive statement to ensure price updates are tracked
-  $: console.log('Frequency changed to:', selectedFrequency);
+  console.log('Frequency changed to:', selectedFrequency);
 
   const plans = [
     {
@@ -41,7 +42,7 @@
         "500 searches per month",
         "Priority support"
       ],
-      highlighted: true
+      highlighted: false
     },
     {
       id: 'enterprise',
@@ -61,33 +62,12 @@
     }
   ];
 
-  onMount(() => {
-    // Load payment provider SDKs
-    loadPaymentSDKs();
-  });
-
-  function loadPaymentSDKs() {
-    // Load Stripe
-    const stripeScript = document.createElement('script');
-    stripeScript.src = 'https://js.stripe.com/v3/';
-    stripeScript.onload = () => {
-      console.log('Stripe SDK loaded');
-    };
-    document.head.appendChild(stripeScript);
-
-    // Load PayPal
-    const paypalScript = document.createElement('script');
-    paypalScript.src = 'https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&vault=true&intent=subscription';
-    paypalScript.onload = () => {
-      console.log('PayPal SDK loaded');
-    };
-    document.head.appendChild(paypalScript);
-  }
+  
 
   async function handleSubscription(planId: string) {
     loading = true;
     error = null;
-
+    const stripe = await loadStripe(PUBLIC_STRIPE_PUBLISHABLE_KEY);
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -105,10 +85,9 @@
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          planId,
+          priceId: monthlyPriceID,
           frequency: selectedFrequency,
-          userId: user.id,
-          paymentProvider: selectedPaymentProvider
+          userId: user.id
         })
       });
 
@@ -116,10 +95,8 @@
         throw new Error('Failed to create subscription');
       }
 
-      const { subscriptionId, approvalUrl, paymentProvider } = await response.json();
-      
-      // Redirect to payment provider
-      window.location.href = approvalUrl;
+      const { sessionId, approvalUrl } = await response.json();
+      stripe.redirectToCheckout({ sessionId });
       
     } catch (err) {
       console.error('Subscription error:', err);
@@ -188,30 +165,6 @@
         <span class="save-badge">Save 20%</span>
       </button>
     </div>
-
-    <div class="payment-provider-selector">
-      <label>Payment Method:</label>
-      <div class="provider-buttons">
-        <button 
-          class:active={selectedPaymentProvider === 'stripe'} 
-          on:click={() => selectedPaymentProvider = 'stripe'}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.831 3.47 1.426 3.47 2.338 0 .914-.796 1.431-2.126 1.431-1.72 0-4.516-.924-6.378-2.168l-.9 5.555C6.203 22.99 9.077 24 12.165 24c2.469 0 4.763-.624 6.199-1.764 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.471l.681-4.883z"/>
-          </svg>
-          Credit Card
-        </button>
-        <button 
-          class:active={selectedPaymentProvider === 'paypal'} 
-          on:click={() => selectedPaymentProvider = 'paypal'}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.067 8.478c.492.315.844.825.844 1.478 0 .653-.352 1.163-.844 1.478-.492.315-1.163.478-1.844.478H16.5v-2.956h1.723c.681 0 1.352.163 1.844.478zM7.933 8.478c.492-.315 1.163-.478 1.844-.478H11.5v2.956H9.777c-.681 0-1.352-.163-1.844-.478-.492-.315-.844-.825-.844-1.478 0-.653.352-1.163.844-1.478zM24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12z"/>
-          </svg>
-          PayPal
-        </button>
-      </div>
-    </div>
   </div>
 
   {#if error}
@@ -279,7 +232,7 @@
       </div>
       <div class="faq-item">
         <h4>What payment methods do you accept?</h4>
-        <p>We accept all major credit cards, PayPal, and bank transfers for annual plans.</p>
+        <p>We accept all major credit cards through our secure Stripe payment processing.</p>
       </div>
       <div class="faq-item">
         <h4>Do you offer refunds?</h4>
@@ -624,56 +577,5 @@
     .faq-grid {
       grid-template-columns: 1fr;
     }
-  }
-
-  .payment-provider-selector {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-md);
-  }
-
-  .payment-provider-selector label {
-    font-weight: 600;
-    color: var(--text);
-    font-size: 0.875rem;
-  }
-
-  .provider-buttons {
-    display: flex;
-    gap: var(--spacing-sm);
-    background: var(--background-secondary);
-    padding: var(--spacing-xs);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
-  }
-
-  .provider-buttons button {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    border: none;
-    background: none;
-    color: var(--text-secondary);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .provider-buttons button:hover {
-    color: var(--text);
-  }
-
-  .provider-buttons button.active {
-    background: var(--accent);
-    color: white;
-  }
-
-  .provider-buttons button svg {
-    width: 16px;
-    height: 16px;
   }
 </style> 
