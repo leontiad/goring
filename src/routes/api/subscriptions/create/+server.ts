@@ -58,7 +58,7 @@ export const POST: RequestHandler = async (event) => {
       approvalUrl = stripeResponse.approvalUrl;
       paymentIntentId = stripeResponse.paymentIntentId;
     } else if (paymentProvider === 'paypal') {
-      // PayPal integration (simplified for now)
+      // PayPal integration
       const paypalResponse = await createPayPalSubscription(planId, frequency, planDetails, user);
       subscriptionId = paypalResponse.subscriptionId;
       approvalUrl = paypalResponse.approvalUrl;
@@ -154,23 +154,116 @@ async function createStripeSubscription(planId: string, frequency: string, planD
 }
 
 async function createPayPalSubscription(planId: string, frequency: string, planDetails: any, user: any) {
-  // Simplified PayPal integration - in production you'd use the full SDK
-  // For now, we'll create a mock subscription and redirect to PayPal checkout
-  
-  const subscriptionId = `paypal_sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  // In a real implementation, you would:
-  // 1. Create PayPal subscription using their API
-  // 2. Get the approval URL from PayPal
-  // 3. Return the PayPal checkout URL
-  
-  // For demo purposes, we'll redirect to a success page
-  const approvalUrl = `/subscription/success?subscription_id=${subscriptionId}`;
+  try {
+    // PayPal API configuration
+    const paypalClientId = env.PAYPAL_CLIENT_ID;
+    const paypalClientSecret = env.PAYPAL_CLIENT_SECRET;
+    const isProduction = env.NODE_ENV === 'production';
+    const paypalBaseUrl = isProduction ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    
+    if (!paypalClientId || !paypalClientSecret) {
+      throw new Error('PayPal credentials not configured');
+    }
 
-  return {
-    subscriptionId,
-    approvalUrl
+    // Get PayPal access token
+    const tokenResponse = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${paypalClientId}:${paypalClientSecret}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'grant_type=client_credentials'
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error('Failed to get PayPal access token');
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    // Create PayPal subscription
+    const subscriptionPayload = {
+      plan_id: getPayPalPlanId(planId, frequency),
+      start_time: new Date(Date.now() + 60000).toISOString(), // Start in 1 minute
+      subscriber: {
+        name: {
+          given_name: user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'User',
+          surname: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'Name'
+        },
+        email_address: user.email
+      },
+      application_context: {
+        brand_name: 'GitHub Score',
+        locale: 'en-US',
+        shipping_preference: 'NO_SHIPPING',
+        user_action: 'SUBSCRIBE_NOW',
+        payment_method: {
+          payer_selected: 'PAYPAL',
+          payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED'
+        },
+        return_url: `${env.PUBLIC_SITE_URL || 'http://localhost:5173'}/subscription/success`,
+        cancel_url: `${env.PUBLIC_SITE_URL || 'http://localhost:5173'}/pricing`
+      }
+    };
+
+    const subscriptionResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(subscriptionPayload)
+    });
+
+    if (!subscriptionResponse.ok) {
+      const errorData = await subscriptionResponse.json();
+      console.error('PayPal subscription creation error:', errorData);
+      throw new Error('Failed to create PayPal subscription');
+    }
+
+    const subscriptionData = await subscriptionResponse.json();
+    
+    return {
+      subscriptionId: subscriptionData.id,
+      approvalUrl: subscriptionData.links.find((link: any) => link.rel === 'approve')?.href
+    };
+  } catch (error) {
+    console.error('PayPal subscription error:', error);
+    throw error;
+  }
+}
+
+function getPayPalPlanId(planId: string, frequency: string): string {
+  // You need to create these plans in your PayPal dashboard first
+  // For now, we'll use placeholder IDs - replace with your actual PayPal plan IDs
+  const paypalPlans = {
+    starter: {
+      monthly: env.PAYPAL_STARTER_MONTHLY_PLAN_ID || 'P-123456789',
+      annually: env.PAYPAL_STARTER_ANNUALLY_PLAN_ID || 'P-987654321'
+    },
+    recruiter: {
+      monthly: env.PAYPAL_RECRUITER_MONTHLY_PLAN_ID || 'P-111111111',
+      annually: env.PAYPAL_RECRUITER_ANNUALLY_PLAN_ID || 'P-222222222'
+    },
+    enterprise: {
+      monthly: env.PAYPAL_ENTERPRISE_MONTHLY_PLAN_ID || 'P-333333333',
+      annually: env.PAYPAL_ENTERPRISE_ANNUALLY_PLAN_ID || 'P-444444444'
+    }
   };
+
+  const plan = paypalPlans[planId as keyof typeof paypalPlans];
+  if (!plan) {
+    throw new Error(`Invalid plan: ${planId}`);
+  }
+
+  const paypalPlanId = plan[frequency as keyof typeof plan];
+  if (!paypalPlanId) {
+    throw new Error(`Invalid frequency: ${frequency}`);
+  }
+
+  return paypalPlanId;
 }
 
 async function getOrCreateStripePrice(stripeClient: any, planId: string, frequency: string, price: number) {
