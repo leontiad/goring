@@ -18,7 +18,7 @@
       const paymentIntent = urlParams.get('payment_intent');
       // const isTest = urlParams.get('test') === 'true';
 
-      if (!subscriptionId && !paymentIntent) {
+      if (!subscriptionId ) {
         error = 'No subscription information found';
         loading = false;
         return;
