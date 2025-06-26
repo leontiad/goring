@@ -45,6 +45,7 @@
 
       // Update subscription status in database
       if (subscriptionId) {
+        console.log('Updating subscription status for session:', subscriptionId);
         const { error: updateError } = await supabase
           .from('subscriptions')
           .update({
@@ -56,16 +57,21 @@
 
         if (updateError) {
           console.error('Error updating subscription:', updateError);
+        } else {
+          console.log('Subscription status updated successfully');
         }
       }
 
       // Fetch subscription details
+      console.log('Fetching subscription details for session:', subscriptionId || paymentIntent);
       const { data: subscription, error: fetchError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('subscription_id', subscriptionId || paymentIntent)
         .eq('user_id', user.id)
         .single();
+
+      console.log('Subscription fetch result:', { subscription, error: fetchError });
 
       if (fetchError) {
         console.error('Error fetching subscription:', fetchError);

@@ -26,8 +26,29 @@ export const POST: RequestHandler = async (event) => {
 
     console.log('Subscription creation request:', { priceId, userId });
 
-    
+    // Determine frequency based on price ID (you can modify this logic as needed)
+    let frequency = 'monthly'; // Default to monthly
+    if (priceId.includes('annual') || priceId.includes('yearly')) {
+      frequency = 'annually';
+    }
 
+    // Determine plan details based on price ID
+    let searchesLimit = 10; // Default for starter plan
+    let price = 10.00; // Default price
+    
+    if (priceId === 'price_1Rdl47CIhb9RqsL0mGLjD3qY') {
+      // Starter plan
+      searchesLimit = 100;
+      price = 29.99;
+    } else if (priceId.includes('recruiter')) {
+      // Recruiter plan
+      searchesLimit = 500;
+      price = 99.00;
+    } else if (priceId.includes('enterprise')) {
+      // Enterprise plan
+      searchesLimit = -1; // Unlimited
+      price = 299.00;
+    }
 
     let subscriptionId: string;
     let paymentIntentId: string | undefined;
@@ -55,13 +76,13 @@ export const POST: RequestHandler = async (event) => {
       .insert({
         user_id: userId,
         plan_id: priceId,
-        // frequency: frequency,
+        frequency: frequency,
         status: 'pending',
         subscription_id: subscriptionId,
         payment_provider: 'stripe',
         payment_intent_id: paymentIntentId,
-        searches_limit: 10,
-        price: 10.00,
+        searches_limit: searchesLimit,
+        price: price,
         created_at: new Date().toISOString()
       });
 
