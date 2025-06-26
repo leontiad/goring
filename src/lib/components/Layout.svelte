@@ -6,10 +6,12 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import Footer from './Footer.svelte';
+  import SubscriptionStatusPopup from './SubscriptionStatusPopup.svelte';
 
   let currentTheme = 'dark';
   let isMoreMenuOpen = false;
   let remainingSearches = 2;
+  let showSubscriptionPopup = false;
   const supabase = createClient();
 
   onMount(() => {
@@ -55,6 +57,14 @@
 
   function toggleMoreMenu() {
     isMoreMenuOpen = !isMoreMenuOpen;
+  }
+
+  function showSubscriptionStatus() {
+    showSubscriptionPopup = true;
+  }
+
+  function closeSubscriptionPopup() {
+    showSubscriptionPopup = false;
   }
 
   function handleNavigation(route: string) {
@@ -205,7 +215,12 @@
     <div class="header-actions">
       {#if $page.data.session?.user}
         <div class="user-info">
-          <span class="welcome-text">Welcome, {$page.data.session.user.email}</span>
+          <button class="email-button" on:click={showSubscriptionStatus}>
+            <span class="welcome-text">Welcome, {$page.data.session.user.email}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
           <div class="search-limit-display">
             <span class="remaining-searches">{remainingSearches} searches left</span>
           </div>
@@ -254,6 +269,12 @@
 
   <Footer />
 </div>
+
+<SubscriptionStatusPopup 
+  show={showSubscriptionPopup} 
+  userEmail={$page.data.session?.user?.email || ''} 
+  on:close={closeSubscriptionPopup}
+/>
 
 <style>
   .layout {
@@ -410,6 +431,35 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+  }
+
+  .email-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .email-button:hover {
+    color: var(--text);
+    background: var(--background-secondary);
+  }
+
+  .email-button svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
+
+  .email-button:hover svg {
+    transform: translateY(1px);
   }
 
   .welcome-text {

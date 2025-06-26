@@ -30,7 +30,6 @@ export const POST: RequestHandler = async (event) => {
 
 
     let subscriptionId: string;
-    let approvalUrl: string;
     let paymentIntentId: string | undefined;
 
     // Stripe integration (only payment provider)
@@ -46,6 +45,7 @@ export const POST: RequestHandler = async (event) => {
         cancel_url: `${PUBLIC_SITE_URL || 'http://localhost:5173'}/pricing`,
     });
     subscriptionId = session.id;
+    paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
     
     console.log('Payment provider response:', { subscriptionId });
     
