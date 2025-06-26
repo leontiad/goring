@@ -20,7 +20,7 @@ export const GET: RequestHandler = async (event) => {
     console.log('User authenticated:', user.id);
 
     // Get user's active subscription
-    const { data: subscription, error: subscriptionError } = await supabase
+    let { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
@@ -29,9 +29,31 @@ export const GET: RequestHandler = async (event) => {
       .limit(1)
       .single();
 
+    console.log('Subscription query result:', { subscription, error: subscriptionError });
+
     if (subscriptionError && subscriptionError.code !== 'PGRST116') {
       console.error('Error fetching subscription:', subscriptionError);
       return json({ error: 'Failed to fetch subscription details' }, { status: 500 });
+    }
+
+    // If no active subscription found, let's check for any subscription
+    if (!subscription) {
+      console.log('No active subscription found, checking for any subscription...');
+      const { data: anySubscription, error: anySubscriptionError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      console.log('Any subscription query result:', { anySubscription, error: anySubscriptionError });
+      
+      if (anySubscription) {
+        console.log('Found subscription with status:', anySubscription.status);
+        // For debugging, let's return this subscription even if it's not active
+        subscription = anySubscription;
+      }
     }
 
     // Get remaining searches
@@ -59,15 +81,15 @@ export const GET: RequestHandler = async (event) => {
     
     // If no next billing date, calculate based on frequency
     let calculatedNextBilling = nextBillingDate;
-    if (!calculatedNextBilling) {
-      if (subscription.frequency === 'monthly') {
-        calculatedNextBilling = new Date(createdAt);
-        calculatedNextBilling.setMonth(calculatedNextBilling.getMonth() + 1);
-      } else if (subscription.frequency === 'annually') {
-        calculatedNextBilling = new Date(createdAt);
-        calculatedNextBilling.setFullYear(calculatedNextBilling.getFullYear() + 1);
-      }
-    }
+    // if (!calculatedNextBilling) {
+    //   if (subscription.frequency === 'monthly') {
+    //     calculatedNextBilling = new Date(createdAt);
+    //     calculatedNextBilling.setMonth(calculatedNextBilling.getMonth() + 1);
+    //   } else if (subscription.frequency === 'annually') {
+    //     calculatedNextBilling = new Date(createdAt);
+    //     calculatedNextBilling.setFullYear(calculatedNextBilling.getFullYear() + 1);
+    //   }
+    // }
 
     return json({
       hasSubscription: true,
@@ -77,7 +99,6 @@ export const GET: RequestHandler = async (event) => {
         planId: subscription.plan_id,
         status: subscription.status,
         price: subscription.price,
-        frequency: subscription.frequency,
         searchesLimit: subscription.searches_limit,
         paymentProvider: subscription.payment_provider,
         createdAt: subscription.created_at,

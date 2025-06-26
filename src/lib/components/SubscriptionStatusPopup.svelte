@@ -221,10 +221,10 @@
               <span class="label">Price:</span>
               <span class="value">{formatPrice(subscriptionData.price)}</span>
             </div>
-            <div class="detail-row">
-              <span class="label">Billing:</span>
-              <span class="value">{subscriptionData.frequency.charAt(0).toUpperCase() + subscriptionData.frequency.slice(1)}</span>
-            </div>
+<!--            <div class="detail-row">-->
+<!--              <span class="label">Billing:</span>-->
+<!--              <span class="value">{subscriptionData.frequency.charAt(0).toUpperCase() + subscriptionData.frequency.slice(1)}</span>-->
+<!--            </div>-->
             <div class="detail-row">
               <span class="label">Remaining Searches:</span>
               <span class="value">
