@@ -4,6 +4,8 @@
   import type { GitHubScore } from '$lib/types';
   import ScoreBreakdown from '$lib/components/ScoreBreakdown.svelte';
   import UserStats from '$lib/components/UserStats.svelte';
+  import UserRepositories from '$lib/components/UserRepositories.svelte';
+  import UserContributions from '$lib/components/UserContributions.svelte';
   import Layout from '$lib/components/Layout.svelte';
   import UsernameAutocomplete from '$lib/components/UsernameAutocomplete.svelte';
   import { debounce } from '$lib/utils';
@@ -361,6 +363,8 @@
         </div>
         <ScoreBreakdown {score} />
         <UserStats {score} />
+        <UserRepositories username={score.username} />
+        <UserContributions username={score.username} />
       </div>
     {/if}
   </div>
