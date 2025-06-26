@@ -7,7 +7,7 @@
 
   const dispatch = createEventDispatcher();
 
-  let loading = true;
+  let loading = false;
   let error: string | null = null;
   let subscriptionData: any = null;
   let remainingSearches = 0;
@@ -23,15 +23,50 @@
       loading = true;
       error = null;
 
+      console.log('Loading subscription data...');
+      
+      // Test mode - bypass API call for debugging
+      if (false) { // Set to true to test without API
+        console.log('Test mode - showing test data');
+        subscriptionData = {
+          id: 'test-123',
+          planId: 'price_1Rdl47CIhb9RqsL0mGLjD3qY',
+          status: 'active',
+          price: 10.00,
+          frequency: 'monthly',
+          searchesLimit: 100,
+          paymentProvider: 'stripe',
+          createdAt: new Date().toISOString(),
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          daysUntilRenewal: 30
+        };
+        remainingSearches = 85;
+        loading = false;
+        return;
+      }
+
+      // Check if user is authenticated
+      const { createClient } = await import('$lib/supabase/client');
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated. Please log in to view subscription details.');
+      }
+
       const response = await fetch('/api/subscriptions/details');
       const data = await response.json();
 
+      console.log('API response:', { status: response.status, data });
+
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load subscription details');
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       subscriptionData = data.subscription;
       remainingSearches = data.remainingSearches;
+
+      console.log('Subscription data loaded:', { subscriptionData, remainingSearches });
 
     } catch (err) {
       console.error('Error loading subscription data:', err);
@@ -42,6 +77,7 @@
   }
 
   function closePopup() {
+    console.log('Close button clicked');
     dispatch('close');
   }
 
@@ -57,6 +93,11 @@
 
   // Watch for show changes to load data
   $: if (show) {
+    console.log('Popup opened, resetting state and loading data');
+    loading = true;
+    error = null;
+    subscriptionData = null;
+    remainingSearches = 0;
     loadSubscriptionData();
   }
 
@@ -109,7 +150,12 @@
         <div class="error">
           <h2 id="popup-title">Something went wrong</h2>
           <p>{error}</p>
-          <button class="btn-primary" on:click={goToPricing}>Go to Pricing</button>
+          {#if error.includes('Unauthorized') || error.includes('not authenticated')}
+            <p>Please make sure you're logged in to view your subscription details.</p>
+            <button class="btn-primary" on:click={closePopup}>Close</button>
+          {:else}
+            <button class="btn-primary" on:click={goToPricing}>Go to Pricing</button>
+          {/if}
         </div>
       {:else if !subscriptionData}
         <div class="no-subscription">
@@ -254,6 +300,7 @@
     padding: 0.5rem;
     border-radius: 0.25rem;
     transition: all 0.2s ease;
+    z-index: 10;
   }
 
   .close-button:hover {

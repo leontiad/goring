@@ -4,14 +4,20 @@ import { createClient } from '$lib/supabase/server';
 
 export const GET: RequestHandler = async (event) => {
   try {
+    console.log('Subscription details API called');
     const supabase = createClient(event);
     
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    console.log('User auth result:', { user: user?.id, error: userError });
     
     if (!user) {
+      console.log('No user found, returning unauthorized');
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    console.log('User authenticated:', user.id);
 
     // Get user's active subscription
     const { data: subscription, error: subscriptionError } = await supabase

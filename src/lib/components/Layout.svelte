@@ -27,6 +27,9 @@
       const customEvent = event as CustomEvent;
       remainingSearches = customEvent.detail.remainingSearches;
     });
+
+    // Debug session state
+    console.log('Layout mounted, session state:', $page.data.session);
   });
 
   async function checkRemainingSearches() {
@@ -60,6 +63,11 @@
   }
 
   function showSubscriptionStatus() {
+    if (!$page.data.session?.user) {
+      console.log('User not authenticated, cannot show subscription status');
+      return;
+    }
+    console.log('Opening subscription popup for user:', $page.data.session.user.email);
     showSubscriptionPopup = true;
   }
 
@@ -272,7 +280,6 @@
 
 <SubscriptionStatusPopup 
   show={showSubscriptionPopup} 
-  userEmail={$page.data.session?.user?.email || ''} 
   on:close={closeSubscriptionPopup}
 />
 
