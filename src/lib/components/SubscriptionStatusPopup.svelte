@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
 
   export let show = false;
-  export let userEmail = '';
 
   const dispatch = createEventDispatcher();
 
@@ -84,9 +83,17 @@
 </script>
 
 {#if show}
-  <div class="popup-overlay" on:click={closePopup}>
+  <div 
+    class="popup-overlay" 
+    on:click={closePopup}
+    on:keydown={(e) => e.key === 'Escape' && closePopup()}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="popup-title"
+    tabindex="-1"
+  >
     <div class="popup-content" on:click|stopPropagation>
-      <button class="close-button" on:click={closePopup}>
+      <button class="close-button" on:click={closePopup} aria-label="Close subscription details">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -100,7 +107,7 @@
         </div>
       {:else if error}
         <div class="error">
-          <h2>Something went wrong</h2>
+          <h2 id="popup-title">Something went wrong</h2>
           <p>{error}</p>
           <button class="btn-primary" on:click={goToPricing}>Go to Pricing</button>
         </div>
@@ -114,7 +121,7 @@
             </svg>
           </div>
           
-          <h2>No Active Subscription</h2>
+          <h2 id="popup-title">No Active Subscription</h2>
           <p>You're currently on the free plan with limited searches.</p>
           
           <div class="subscription-details">
@@ -151,7 +158,7 @@
             </svg>
           </div>
           
-          <h2>Active Subscription</h2>
+          <h2 id="popup-title">Active Subscription</h2>
           <p>You have an active subscription with enhanced features.</p>
           
           <div class="subscription-details">
