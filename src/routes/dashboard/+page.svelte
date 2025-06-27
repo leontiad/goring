@@ -28,20 +28,26 @@
   onMount(() => {
     console.log('Dashboard page mounted');
     checkSearchLimit();
+    if (browser && searchInput) {
+      searchInput.focus();
+    }
   });
 
   async function checkSearchLimit() {
     try {
+      console.log('Checking search limit...');
       const response = await fetch('/api/search-limit');
       const data = await response.json();
       
       if (response.ok) {
         remainingSearches = data.remainingSearches;
         canSearch = data.canSearch;
+        console.log('Search limit check result:', { remainingSearches, canSearch });
       } else {
         // If database functions don't exist yet, assume user can search
         remainingSearches = 2;
         canSearch = true;
+        console.log('Search limit check failed, using defaults:', { remainingSearches, canSearch });
       }
     } catch (err) {
       console.error('Error checking search limit:', err);
@@ -119,7 +125,7 @@
     }
   }
 
-  function handleSelect(selectedUsername: string) {
+  async function handleSelect(selectedUsername: string) {
     username = selectedUsername;
     showDropdown = false;
     // Ensure input stays focused after selection
@@ -128,14 +134,15 @@
         searchInput.focus();
       }
     });
-    handleSubmit();
-  }
-
-  onMount(() => {
-    if (browser && searchInput) {
-      searchInput.focus();
+    
+    // Check if user can search before submitting
+    await checkSearchLimit();
+    if (canSearch) {
+      handleSubmit();
+    } else {
+      error = 'You have reached your daily search limit. Please try again tomorrow.';
     }
-  });
+  }
 
   onDestroy(() => {
     if (searchTimeout) {
@@ -145,6 +152,17 @@
 
   async function handleSubmit() {
     if (!username) return;
+
+    // Always check search limit before making any API calls
+    await checkSearchLimit();
+    
+    console.log('Search attempt - canSearch:', canSearch, 'remainingSearches:', remainingSearches);
+    
+    if (!canSearch) {
+      error = 'You have reached your daily search limit. Please try again tomorrow.';
+      console.log('Search blocked - limit reached');
+      return;
+    }
 
     loading = true;
     error = null;
@@ -266,11 +284,16 @@
           bind:value={username}
           bind:this={searchInput}
           on:input={handleInput}
-          disabled={loading}
+          disabled={loading || !canSearch}
         />
-        <button on:click={handleSubmit} disabled={loading || !username}>
+        <button on:click={handleSubmit} disabled={loading || !username || !canSearch}>
           {loading ? 'Loading...' : 'Get Score'}
         </button>
+      </div>
+      <div class="search-info">
+        <span class="remaining-searches">
+          {remainingSearches} search{remainingSearches !== 1 ? 'es' : ''} remaining today
+        </span>
       </div>
       <div class="autocomplete-wrapper">
         <UsernameAutocomplete
@@ -283,9 +306,9 @@
       {#if error}
         <div class="error-message">{error}</div>
       {/if}
-      {#if !canSearch}
+      {#if !canSearch && remainingSearches === 0}
         <div class="limit-warning">
-          You've reached your daily search limit. Try again tomorrow!
+          <strong>Search Limit Reached!</strong> You've used all your daily searches. Try again tomorrow or upgrade to a paid plan for unlimited searches.
         </div>
       {/if}
     </div>
@@ -398,6 +421,20 @@
     position: relative;
     max-width: 500px;
     margin: 0 auto 1rem;
+  }
+
+  .search-info {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .remaining-searches {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    background: var(--card-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
   }
 
   .autocomplete-wrapper {
@@ -538,6 +575,11 @@
   .limit-warning {
     color: #ef4444;
     margin-top: 1rem;
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    text-align: center;
   }
 
   @media (max-width: 768px) {
