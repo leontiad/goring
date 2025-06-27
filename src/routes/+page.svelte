@@ -4,12 +4,10 @@
   import { createClient } from '$lib/supabase/client';
   import type { GitHubScore } from '$lib/types';
   import ScoreBreakdown from '$lib/components/ScoreBreakdown.svelte';
-  import ComparisonView from '$lib/components/ComparisonView.svelte';
   import Layout from '$lib/components/Layout.svelte';
   import UserStats from '$lib/components/UserStats.svelte';
   import { endpoints } from '$lib/config';
   import { page } from '$app/stores';
-  import UsernameAutocomplete from '$lib/components/UsernameAutocomplete.svelte';
   import { debounce } from '$lib/utils';
   import type { PageData } from './$types';
   import LoginModal from '$lib/components/LoginModal.svelte';
@@ -23,37 +21,13 @@
   let score: GitHubScore | null = null;
   let comparisonScores: GitHubScore[] = [];
   let rating: string | null = null;
-  let componentScores: any = null;
-  let detailedComponents: any = null;
   let suggestions: { login: string; avatar_url: string }[] = [];
   let showDropdown = false;
-  let searchTimeout: NodeJS.Timeout;
-  
+
   // Login modal state
   let showLoginModal = false;
   
   const supabase = createClient();
-  
-  interface GitHubRepo {
-    name: string;
-    full_name: string;
-    stargazers_count: number;
-    forks_count: number;
-    updated_at: string;
-    owner: { login: string };
-    description: string | null;
-  }
-
-  interface GitHubEvent {
-    type: string;
-    created_at: string;
-    repo: { name: string } | null;
-    payload: { action: string | null } | null;
-  }
-
-  interface GitHubPullRequest {
-    merged_at: string | null;
-  }
 
   interface GitHubProfile {
     company: string | null;
