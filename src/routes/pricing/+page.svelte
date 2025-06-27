@@ -7,7 +7,11 @@
   const monthlyPriceID = 'price_1Rdl47CIhb9RqsL0mGLjD3qY';
 
   let selectedFrequency = 'monthly';
-  let loading = false;
+  let loadingStates: Record<string, boolean> = {
+    starter: false,
+    recruiter: false,
+    enterprise: false
+  };
   let error: string | null = null;
   const supabase = createClient();
 
@@ -24,7 +28,7 @@
       features: [
         "Hot: Last 30 days data",
         "Basic Scoring",
-        "100 searches per month",
+        "10 searches per month",
         "Email support"
       ],
       highlighted: false
@@ -65,7 +69,7 @@
   
 
   async function handleSubscription(planId: string) {
-    loading = true;
+    loadingStates[planId] = true;
     error = null;
     const stripe = await loadStripe(PUBLIC_STRIPE_PUBLISHABLE_KEY);
     try {
@@ -106,7 +110,7 @@
       console.error('Subscription error:', err);
       error = err instanceof Error ? err.message : 'Failed to create subscription';
     } finally {
-      loading = false;
+      loadingStates[planId] = false;
     }
   }
 
@@ -209,12 +213,12 @@
 
         <button 
           class="cta-button"
-          class:loading={loading}
+          class:loading={loadingStates[plan.id]}
           class:disabled={plan.id === 'recruiter' || plan.id === 'enterprise'}
-          disabled={loading || plan.id === 'recruiter' || plan.id === 'enterprise'}
+          disabled={loadingStates[plan.id] || plan.id === 'recruiter' || plan.id === 'enterprise'}
           on:click={() => plan.id !== 'recruiter' && plan.id !== 'enterprise' && handleSubscription(plan.id)}
         >
-          {#if loading}
+          {#if loadingStates[plan.id]}
             <span class="spinner"></span>
             Processing...
           {:else if plan.id === 'recruiter' || plan.id === 'enterprise'}
