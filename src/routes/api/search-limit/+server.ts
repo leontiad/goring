@@ -13,6 +13,22 @@ export const GET = async (event: RequestEvent) => {
             return json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // First, check if user has an active subscription
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+            .rpc('get_user_active_subscription', { user_uuid: user.id });
+
+        let userLimit = 2; // Default free plan limit
+        let isSubscriber = false;
+
+        if (!subscriptionError && subscriptionData && subscriptionData.length > 0) {
+            const subscription = subscriptionData[0];
+            userLimit = subscription.searches_limit;
+            isSubscriber = true;
+            console.log('User has active subscription:', { userLimit, isSubscriber });
+        } else {
+            console.log('No active subscription found, using free plan limit');
+        }
+
         // Check remaining searches using the database function
         const { data: remainingData, error: remainingError } = await supabase
             .rpc('get_remaining_searches');
@@ -21,9 +37,10 @@ export const GET = async (event: RequestEvent) => {
             console.error('Error getting remaining searches:', remainingError);
             // If database function doesn't exist, assume user can search
             return json({
-                remainingSearches: 2,
+                remainingSearches: userLimit,
                 canSearch: true,
-                limit: 2
+                limit: userLimit,
+                isSubscriber
             });
         }
 
@@ -32,7 +49,8 @@ export const GET = async (event: RequestEvent) => {
         return json({
             remainingSearches,
             canSearch: remainingSearches > 0,
-            limit: 2
+            limit: userLimit,
+            isSubscriber
         });
 
     } catch (error) {
@@ -41,7 +59,8 @@ export const GET = async (event: RequestEvent) => {
         return json({
             remainingSearches: 2,
             canSearch: true,
-            limit: 2
+            limit: 2,
+            isSubscriber: false
         });
     }
 };
@@ -63,6 +82,22 @@ export const POST = async (event: RequestEvent) => {
             return json({ error: 'Username is required' }, { status: 400 });
         }
 
+        // First, check if user has an active subscription
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+            .rpc('get_user_active_subscription', { user_uuid: user.id });
+
+        let userLimit = 2; // Default free plan limit
+        let isSubscriber = false;
+
+        if (!subscriptionError && subscriptionData && subscriptionData.length > 0) {
+            const subscription = subscriptionData[0];
+            userLimit = subscription.searches_limit;
+            isSubscriber = true;
+            console.log('User has active subscription:', { userLimit, isSubscriber });
+        } else {
+            console.log('No active subscription found, using free plan limit');
+        }
+
         // Check if user can search
         const { data: canSearchData, error: canSearchError } = await supabase
             .rpc('check_search_limit');
@@ -75,7 +110,9 @@ export const POST = async (event: RequestEvent) => {
             return json({ 
                 error: 'Search limit reached',
                 remainingSearches: 0,
-                canSearch: false
+                canSearch: false,
+                limit: userLimit,
+                isSubscriber
             }, { status: 429 });
         }
 
@@ -93,11 +130,15 @@ export const POST = async (event: RequestEvent) => {
             console.log('Search table not available, continuing without recording...');
             return json({
                 success: true,
-                remainingSearches: 1,
+                remainingSearches: userLimit - 1,
                 canSearch: true,
+                limit: userLimit,
+                isSubscriber,
                 message: 'Search completed (tracking not available)'
             });
         }
+
+        console.log('Search recorded successfully for user:', user.id, 'username:', username);
 
         // Get updated remaining searches
         const { data: remainingData, error: remainingError } = await supabase
@@ -108,18 +149,23 @@ export const POST = async (event: RequestEvent) => {
             // If function doesn't exist, assume 1 search remaining
             return json({
                 success: true,
-                remainingSearches: 1,
+                remainingSearches: userLimit - 1,
                 canSearch: true,
+                limit: userLimit,
+                isSubscriber,
                 message: 'Search recorded successfully'
             });
         }
 
         const remainingSearches = remainingData || 0;
+        console.log('Updated remaining searches:', remainingSearches, 'for user limit:', userLimit);
 
         return json({
             success: true,
             remainingSearches,
             canSearch: remainingSearches > 0,
+            limit: userLimit,
+            isSubscriber,
             message: 'Search recorded successfully'
         });
 
@@ -130,6 +176,8 @@ export const POST = async (event: RequestEvent) => {
             success: true,
             remainingSearches: 1,
             canSearch: true,
+            limit: 2,
+            isSubscriber: false,
             message: 'Search completed (tracking not available)'
         });
     }

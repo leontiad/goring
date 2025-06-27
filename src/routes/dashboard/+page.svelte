@@ -24,6 +24,8 @@
   let searchInput: HTMLInputElement;
   let remainingSearches = 2;
   let canSearch = true;
+  let userLimit = 2;
+  let isSubscriber = false;
 
   onMount(() => {
     console.log('Dashboard page mounted');
@@ -42,18 +44,24 @@
       if (response.ok) {
         remainingSearches = data.remainingSearches;
         canSearch = data.canSearch;
-        console.log('Search limit check result:', { remainingSearches, canSearch });
+        userLimit = data.limit;
+        isSubscriber = data.isSubscriber;
+        console.log('Search limit check result:', { remainingSearches, canSearch, userLimit, isSubscriber });
       } else {
         // If database functions don't exist yet, assume user can search
         remainingSearches = 2;
         canSearch = true;
-        console.log('Search limit check failed, using defaults:', { remainingSearches, canSearch });
+        userLimit = 2;
+        isSubscriber = false;
+        console.log('Search limit check failed, using defaults:', { remainingSearches, canSearch, userLimit, isSubscriber });
       }
     } catch (err) {
       console.error('Error checking search limit:', err);
       // If there's an error, assume user can search
       remainingSearches = 2;
       canSearch = true;
+      userLimit = 2;
+      isSubscriber = false;
     }
   }
 
@@ -156,7 +164,7 @@
     // Always check search limit before making any API calls
     await checkSearchLimit();
     
-    console.log('Search attempt - canSearch:', canSearch, 'remainingSearches:', remainingSearches);
+    console.log('Search attempt - canSearch:', canSearch, 'remainingSearches:', remainingSearches, 'userLimit:', userLimit, 'isSubscriber:', isSubscriber);
     
     if (!canSearch) {
       error = 'You have reached your daily search limit. Please try again tomorrow.';
@@ -291,8 +299,15 @@
         </button>
       </div>
       <div class="search-info">
-        <span class="remaining-searches">
-          {remainingSearches} search{remainingSearches !== 1 ? 'es' : ''} remaining today
+        <span class="remaining-searches" class:subscriber={isSubscriber}>
+          {#if remainingSearches >= 999999}
+            Unlimited searches available
+          {:else}
+            {remainingSearches} search{remainingSearches !== 1 ? 'es' : ''} remaining today
+          {/if}
+          {#if isSubscriber}
+            <span class="subscriber-badge">PRO</span>
+          {/if}
         </span>
       </div>
       <div class="autocomplete-wrapper">
@@ -435,6 +450,22 @@
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     border: 1px solid var(--border);
+  }
+
+  .remaining-searches.subscriber {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-color: #10b981;
+  }
+
+  .subscriber-badge {
+    background-color: #ffffff;
+    color: #10b981;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
   }
 
   .autocomplete-wrapper {
