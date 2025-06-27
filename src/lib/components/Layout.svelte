@@ -11,6 +11,8 @@
   let currentTheme = 'dark';
   let isMoreMenuOpen = false;
   let remainingSearches = 2;
+  let userLimit = 2;
+  let isSubscriber = false;
   let showSubscriptionPopup = false;
   const supabase = createClient();
 
@@ -40,6 +42,8 @@
         
         if (response.ok) {
           remainingSearches = data.remainingSearches;
+          userLimit = data.limit;
+          isSubscriber = data.isSubscriber;
         }
       } catch (err) {
         console.error('Error checking remaining searches:', err);
@@ -230,7 +234,16 @@
             </svg>
           </button>
           <div class="search-limit-display">
-            <span class="remaining-searches">{remainingSearches} searches left</span>
+            <span class="remaining-searches" class:subscriber={isSubscriber}>
+              {#if remainingSearches >= 999999}
+                Unlimited
+              {:else}
+                {remainingSearches} searches left
+              {/if}
+              {#if isSubscriber}
+                <span class="pro-badge">PRO</span>
+              {/if}
+            </span>
           </div>
           <button class="sign-out-btn" on:click={signOut}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -480,12 +493,31 @@
   }
 
   .remaining-searches {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--text-secondary);
     background: var(--background-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    height: 36px;
+  }
+
+  .remaining-searches.subscriber {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-color: #10b981;
+  }
+
+  .pro-badge {
+    background-color: #ffffff;
+    color: #10b981;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
-    border: 1px solid var(--border);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
   }
 
   .sign-out-btn {
