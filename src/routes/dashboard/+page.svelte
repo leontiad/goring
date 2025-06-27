@@ -298,18 +298,6 @@
           {loading ? 'Loading...' : 'Get Score'}
         </button>
       </div>
-      <div class="search-info">
-        <span class="remaining-searches" class:subscriber={isSubscriber}>
-          {#if remainingSearches >= 999999}
-            Unlimited searches available
-          {:else}
-            {remainingSearches} search{remainingSearches !== 1 ? 'es' : ''} remaining today
-          {/if}
-          {#if isSubscriber}
-            <span class="subscriber-badge">PRO</span>
-          {/if}
-        </span>
-      </div>
       <div class="autocomplete-wrapper">
         <UsernameAutocomplete
           suggestions={suggestions}
@@ -436,36 +424,6 @@
     position: relative;
     max-width: 500px;
     margin: 0 auto 1rem;
-  }
-
-  .search-info {
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-
-  .remaining-searches {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    background: var(--card-bg);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--border);
-  }
-
-  .remaining-searches.subscriber {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    border-color: #10b981;
-  }
-
-  .subscriber-badge {
-    background-color: #ffffff;
-    color: #10b981;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-left: 0.5rem;
   }
 
   .autocomplete-wrapper {
