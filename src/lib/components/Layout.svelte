@@ -501,6 +501,8 @@
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   .remaining-searches.subscriber {
@@ -517,6 +519,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     margin-left: 0.5rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
   }
 
   .sign-out-btn {
@@ -531,6 +536,7 @@
     font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    line-height: 1;
   }
 
   .sign-out-btn:hover {
