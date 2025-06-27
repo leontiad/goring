@@ -501,7 +501,6 @@
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
-    height: 36px;
   }
 
   .remaining-searches.subscriber {
